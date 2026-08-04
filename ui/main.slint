@@ -3,6 +3,8 @@ import "./fonts/xanh_mono/XanhMono-Regular.ttf";
 import "./fonts/xanh_mono/XanhMono-Italic.ttf";
 import "./fonts/roboto_mono/RobotoMono-Italic-VariableFont_wght.ttf";
 import "./fonts/roboto_mono/RobotoMono-VariableFont_wght.ttf";
+import { HorizontalBox, VerticalBox } from "std-widgets.slint";
+import { MarqueeText } from "./marquee.slint"; // Add this line
 
 export component MainWindow inherits Window {
     width: 320px;
@@ -12,11 +14,11 @@ export component MainWindow inherits Window {
     background: Theme.background;
 
     in property <string> track-title: "No Track Loaded";
-    in property <string> track-artist: "";
+    in property <string> track-artist: "Vast...";
     in property <string> lyric-line: "";
     in property <bool> has-lyrics: false;
     in property <float> progress: 0.0;
-    in property <string> time-label: "0:00 / 0:00";
+    in property <string> time-label: "--:-- / --:--";
     in property <bool> is-playing: false;
 
     // Track info
@@ -24,25 +26,27 @@ export component MainWindow inherits Window {
         padding: 14px;
         spacing: 10px;
 
-        Text {
-            text: root.track-title;
-            font-size: 18px;
-            font-weight: 700;
-            color: white;
-            horizontal-alignment: center;
-            overflow: elide;
-            font-family: "Xanh Mono";
-        }
-        Text {
-            text: root.track-artist;
-            font-size: 12px;
-            color: #aaaaaa;
-            horizontal-alignment: center;
-            overflow: elide;
+        VerticalLayout {
+            MarqueeText {
+                text: root.track-title;
+                font-size: 18px;
+                font-weight: 700;
+                font-family: "Xanh Mono";
+                width: parent.width;
+            }
+            Text {
+                text: root.track-artist;
+                font-size: 12px;
+                color: #aaaaaa;
+                horizontal-alignment: left;
+                overflow: elide;
+            }
+
+            Rectangle {}
         }
 
         Text {
-            text: root.has-lyrics ? root.lyric-line : "[no lyrics found]";
+            text: root.has-lyrics ? root.lyric-line : "";
             font-size: 14px;
             color: root.has-lyrics ? Theme.text : #555555;
             horizontal-alignment: center;
@@ -53,15 +57,17 @@ export component MainWindow inherits Window {
 
     // Progress
     VerticalLayout {
-        // Why does it do that? I don't know why it pushes it to the bottom, but that's
-        // desired, so I guess that's good.
+        // It's a spacer
         Rectangle {}
 
-        Text {
-            text: root.time-label;
-            font-size: 10px;
-            color: Theme.text-2;
-            horizontal-alignment: center;
+        HorizontalLayout {
+            padding-left: 4px;
+            Text {
+                text: root.time-label;
+                font-size: 10px;
+                color: Theme.text-2;
+                horizontal-alignment: left;
+            }
         }
 
         Rectangle {

@@ -1,0 +1,82 @@
+import { Theme } from "./colours.slint";
+
+export component MarqueeText inherits Rectangle {
+    in property <string> text;
+    in property <length> gap: 48px;
+    in property <float> speed: 60;
+
+    width: 320px;
+    height: 32px;
+    clip: true;
+
+    private property <length> text-width: txt1.preferred-width;
+    private property <length> loop-distance: root.text-width + root.gap;
+    private property <length> offset: 0px;
+    
+    private property <bool> needs-scroll: root.text-width > root.width;
+
+    Timer {
+        // TODO: consider dynamically determining this?
+        interval: 30ms;
+
+        running: root.needs-scroll;
+        triggered => {
+            root.offset -= (root.speed * 16) * 1px / 1000;
+            if (root.offset <= -root.loop-distance) {
+                root.offset += root.loop-distance;
+            }
+        }
+    }
+
+    in property <string> font-family;
+    in property <int> font-weight: 700;
+    in property <length> font-size: 20px;
+    in property <color> fade-colour: Theme.background;
+
+    Rectangle {
+        x: root.needs-scroll ? root.offset : 0px;
+        y: 0px;
+
+        txt1 := Text {
+            x: 0px;
+            text: root.text;
+            font-family: root.font-family;
+            font-weight: root.font-weight;
+            font-size: root.font-size;
+            vertical-alignment: center;
+            height: parent.height;
+        }
+
+        txt2 := Text {
+            x: root.loop-distance;
+            text: root.text;
+            font-family: root.font-family;
+            font-weight: root.font-weight;
+            font-size: root.font-size;
+            vertical-alignment: center;
+            height: parent.height;
+            visible: root.needs-scroll;
+        }
+    }
+
+    // Why is there a gap between where the text starts/ends and 
+    // where this does? There's this tiny pixel (maybe even less)
+    // gap that I CAN'T seem to fix...
+    Rectangle {
+        x: 0px;
+        y: 0px;
+        width: 25px;
+        height: parent.height;
+        background: @linear-gradient(90deg, root.fade-colour 0%, #ffffff00 100%);
+        visible: root.needs-scroll;
+    }
+
+    Rectangle {
+        x: parent.width - 25px;
+        y: 0px;
+        width: 25px;
+        height: parent.height;
+        background: @linear-gradient(90deg, #ffffff00 0%, root.fade-colour 100%);
+        visible: root.needs-scroll;
+    }
+}
