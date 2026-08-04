@@ -1,34 +1,45 @@
-//! Audio playback module.
-//!
-//! Deliberately kept small and modular: `play_file()` is the one entry
-//! point the rest of the app needs. Everything else (metadata, decoding
-//! backend, device selection) is free to grow behind that same function
-//! signature later without touching callers.
-
 use rodio::{Decoder, OutputStream, OutputStreamHandle, Sink, Source};
 use std::fs::File;
 use std::io::BufReader;
 use std::path::{Path, PathBuf};
 use std::time::{Duration, Instant};
+use audiotags::Tag;
 
-/// Basic track metadata. Currently just derived from the filename;
-/// swap in an ID3/metadata crate here later without changing callers.
 #[derive(Debug, Clone, Default)]
 pub struct TrackInfo {
     pub title: String,
-    pub artist: String,
+    pub artists: Vec<String>,
     pub path: PathBuf,
 }
 
 impl TrackInfo {
     pub fn from_path(path: &Path) -> Self {
-        let title = path
-            .file_stem()
-            .map(|s| s.to_string_lossy().to_string())
-            .unwrap_or_else(|| "Unknown".to_string());
+        let filename_title = match path.file_stem() {
+            Some(s) => s.to_string_lossy().to_string(),
+            None => "[no title]".to_string(),
+        };
+
+        let tags = Tag::default().read_from_path(&path);
+
+        let (title, artists) = match tags {
+            Ok(tags) => {
+                let title = match tags.title() {
+                    Some(t) if !t.is_empty() => t.to_string(),
+                    _ => filename_title,
+                };
+
+                let mut artists: Vec<String> = Vec::new();
+                for a in tags.artists().unwrap_or(vec![]) {
+                    artists.push(a.to_string());
+                }
+                (title, artists)
+            }
+            Err(_) => (filename_title, vec![]),
+        };
+
         TrackInfo {
             title,
-            artist: String::new(),
+            artists,
             path: path.to_path_buf(),
         }
     }

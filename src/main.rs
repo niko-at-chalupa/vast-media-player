@@ -4,6 +4,7 @@ mod player;
 use clap::Parser;
 use lyrics::Lyrics;
 use player::Player;
+use slint::SharedString;
 use std::path::PathBuf;
 use std::rc::Rc;
 use std::time::Duration;
@@ -30,17 +31,24 @@ fn main() -> anyhow::Result<()> {
         anyhow::bail!("Audio file not found: {}", cli.audio_file.display());
     }
 
-    // Load lyrics up front. Missing lyrics is a normal, expected outcome,
-    // not an error — the UI has an explicit "no lyrics" state for it.
     let lyrics = Lyrics::find_and_load_for(&cli.audio_file);
     let has_lyrics = lyrics.is_some();
 
-    // play_file() is the single entry point for starting playback.
     let player = Rc::new(Player::play_file(&cli.audio_file)?);
 
     let ui = MainWindow::new()?;
     ui.set_track_title(player.info.title.clone().into());
-    ui.set_track_artist(player.info.artist.clone().into());
+
+    {
+        let artists = player.info.artists.clone();
+        let artists_string = if !artists.is_empty() {
+            artists.join(", ")
+        } else {
+            "[no artist tags]".to_string()
+        };
+        ui.set_track_artist(SharedString::from(artists_string));
+    }
+
     ui.set_has_lyrics(has_lyrics);
 
     // Drive UI updates from a timer tick rather than blocking the UI

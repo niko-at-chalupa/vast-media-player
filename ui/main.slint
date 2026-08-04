@@ -19,6 +19,7 @@ export component MainWindow inherits Window {
     in property <string> time-label: "0:00 / 0:00";
     in property <bool> is-playing: false;
 
+    // Track info
     VerticalLayout {
         padding: 14px;
         spacing: 10px;
@@ -50,7 +51,7 @@ export component MainWindow inherits Window {
         }
     }
 
-    
+    // Progress
     VerticalLayout {
         // Why does it do that? I don't know why it pushes it to the bottom, but that's
         // desired, so I guess that's good.
@@ -59,7 +60,7 @@ export component MainWindow inherits Window {
         Text {
             text: root.time-label;
             font-size: 10px;
-            color: #888888;
+            color: Theme.text-2;
             horizontal-alignment: center;
         }
 
