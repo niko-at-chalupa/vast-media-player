@@ -5,7 +5,7 @@
 //! backend, device selection) is free to grow behind that same function
 //! signature later without touching callers.
 
-use rodio::{Decoder, OutputStream, OutputStreamHandle, Sink};
+use rodio::{Decoder, OutputStream, OutputStreamHandle, Sink, Source};
 use std::fs::File;
 use std::io::BufReader;
 use std::path::{Path, PathBuf};
