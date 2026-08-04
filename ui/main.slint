@@ -62,11 +62,21 @@ export component MainWindow inherits Window {
 
         HorizontalLayout {
             padding-left: 4px;
+            padding-right: 4px;
             Text {
                 text: root.time-label;
                 font-size: 10px;
                 color: Theme.text-2;
                 horizontal-alignment: left;
+                height: 16px;
+            }
+
+            Image {
+                source: root.is-playing ? @image-url("assets/pause.svg") : @image-url("assets/play.svg");
+                width: 10px;
+                height: 10px;
+                colorize: Theme.text-2; 
+                vertical-alignment: center;
             }
         }
 
