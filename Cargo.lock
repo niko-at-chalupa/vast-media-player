@@ -2612,17 +2612,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "ipod-prototype"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "clap",
- "rodio",
- "slint",
- "slint-build",
-]
-
-[[package]]
 name = "is_terminal_polyfill"
 version = "1.70.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -5507,6 +5496,17 @@ dependencies = [
  "aligned-vec",
  "num-traits",
  "wasm-bindgen",
+]
+
+[[package]]
+name = "vast-media-player"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "clap",
+ "rodio",
+ "slint",
+ "slint-build",
 ]
 
 [[package]]

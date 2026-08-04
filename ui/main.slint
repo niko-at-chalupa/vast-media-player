@@ -1,15 +1,21 @@
+import { Theme } from "./colours.slint";
+import "./fonts/xanh_mono/XanhMono-Regular.ttf";
+import "./fonts/xanh_mono/XanhMono-Italic.ttf";
+import "./fonts/roboto_mono/RobotoMono-Italic-VariableFont_wght.ttf";
+import "./fonts/roboto_mono/RobotoMono-VariableFont_wght.ttf";
+
 export component MainWindow inherits Window {
-    // Classic click-wheel iPod screen resolution
     width: 320px;
     height: 240px;
-    title: "iPod-style Prototype";
-    background: #101010;
+    title: "Vast";
+    default-font-family: "Roboto Mono";
+    background: Theme.background;
 
     in property <string> track-title: "No Track Loaded";
     in property <string> track-artist: "";
     in property <string> lyric-line: "";
     in property <bool> has-lyrics: false;
-    in property <float> progress: 0.0; // 0.0 - 1.0
+    in property <float> progress: 0.0;
     in property <string> time-label: "0:00 / 0:00";
     in property <bool> is-playing: false;
 
@@ -17,7 +23,6 @@ export component MainWindow inherits Window {
         padding: 14px;
         spacing: 10px;
 
-        // --- Header: track info ---
         Text {
             text: root.track-title;
             font-size: 18px;
@@ -25,6 +30,7 @@ export component MainWindow inherits Window {
             color: white;
             horizontal-alignment: center;
             overflow: elide;
+            font-family: "Xanh Mono";
         }
         Text {
             text: root.track-artist;
@@ -34,50 +40,39 @@ export component MainWindow inherits Window {
             overflow: elide;
         }
 
-        // --- Spacer / album-art placeholder area ---
-        Rectangle {
-            height: 90px;
-            background: #202020;
-            border-radius: 4px;
-            Text {
-                text: root.is-playing ? "▶ playing" : "⏸ paused";
-                color: #666666;
-                font-size: 14px;
-                horizontal-alignment: center;
-                vertical-alignment: center;
-            }
-        }
-
-        // --- Lyric line ---
         Text {
-            text: root.has-lyrics ? root.lyric-line : "(no lyrics found)";
+            text: root.has-lyrics ? root.lyric-line : "[no lyrics found]";
             font-size: 14px;
-            color: root.has-lyrics ? #33ccff : #555555;
+            color: root.has-lyrics ? Theme.text : #555555;
             horizontal-alignment: center;
             wrap: word-wrap;
             height: 40px;
         }
+    }
 
-        // --- Progress bar ---
-        Rectangle {
-            height: 6px;
-            background: #333333;
-            border-radius: 3px;
-            Rectangle {
-                x: 0px;
-                y: 0px;
-                width: parent.width * root.progress;
-                height: parent.height;
-                background: #33ccff;
-                border-radius: 3px;
-            }
-        }
+    
+    VerticalLayout {
+        // Why does it do that? I don't know why it pushes it to the bottom, but that's
+        // desired, so I guess that's good.
+        Rectangle {}
 
         Text {
             text: root.time-label;
             font-size: 10px;
             color: #888888;
             horizontal-alignment: center;
+        }
+
+        Rectangle {
+            height: 9px;
+            background: Theme.background-2;
+            Rectangle {
+                x: 0px;
+                y: 0px;
+                width: parent.width * root.progress;
+                height: parent.height;
+                background: Theme.primary;
+            }
         }
     }
 }
