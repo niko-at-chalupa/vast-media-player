@@ -58,6 +58,15 @@ export component MainWindow inherits Window {
                     return accept;
                 }
             }
+
+            if (root.active-screen == State.Player) {
+                if event.text == Key.Escape {
+                    // Looks weird, but it's better inline...
+                    AppState.state = State.Home;
+                    return accept;
+                }
+            }
+
             return reject;
         }
     }
