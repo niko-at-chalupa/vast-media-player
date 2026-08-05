@@ -1,0 +1,111 @@
+import "./fonts/roboto_mono/RobotoMono-VariableFont_wght.ttf";
+import { Theme } from "./colours.slint";
+import { Window } from "./window.slint";
+import { AppState, State } from "./state.slint";
+
+export global SidebarEntryColors {
+    in-out property <color> hover: #35293c;
+
+    in-out property <color> active: #ebd0ff;
+}
+
+export component SidebarEntry inherits Rectangle {
+    in property <string> text;
+    in-out property <bool> focused: false;
+    callback activated();
+
+    background: focused ? SidebarEntryColors.hover : transparent;
+
+    width: 120px;
+    height: 25px;
+
+    animate background {
+        duration: 100ms;
+        easing: ease-out;
+    }
+
+    HorizontalLayout {
+        padding: 5px;
+
+        Text {
+            color: root.focused ? SidebarEntryColors.active : Theme.text;
+            animate color {
+                duration: 100ms;
+                easing: ease-out;
+            }
+            text: root.text;
+            height: 15px;
+            vertical-alignment: center;
+            font-size: 15px;
+            font-family: "Roboto Mono";
+        }
+    }
+}
+
+export component Home inherits Rectangle {
+    width: 320px;
+    height: 240px;
+    background: Theme.background;
+
+    property <int> focused-index: 0;
+
+    property <[string]> entries: ["Player", "Test"];
+
+    callback entry-activated(int);
+    entry-activated(index) => {
+        if (index == 0) { AppState.state = State.Player; }
+        if (index == 1) { debug("test"); }
+    }
+
+    FocusScope {
+        init => { self.focus(); }
+
+        key-pressed(event) => {
+            if (event.text == Key.S || event.text == Key.DownArrow) {
+                focused-index = Math.min(focused-index + 1, entries.length - 1);
+                return accept;
+            }
+            if (event.text == Key.W || event.text == Key.UpArrow) {
+                focused-index = Math.max(focused-index - 1, 0);
+                return accept;
+            }
+            if (event.text == Key.F || event.text == " " || event.text == Key.Return) {
+                root.entry-activated(focused-index);
+                return accept;
+            }
+            return reject;
+        }
+    }
+
+    HorizontalLayout {
+        Rectangle {
+            background: Theme.background-2;
+
+            VerticalLayout {
+                alignment: start;
+
+                for entry[idx] in root.entries : SidebarEntry {
+                    text: entry;
+                    focused: root.focused-index == idx;
+                    activated => { root.entry-activated(idx); }
+                }
+            }
+        }
+
+        Rectangle {
+            VerticalLayout {
+                padding: 5px;
+
+                Window {
+                    height: 75px;
+
+                    Image {
+                        source: @image-url("assets/logo/vastdark.png");
+                        height: parent.height -5px;
+                        width: parent.width -5px;
+                    }
+                }
+            }
+        }
+    }
+}

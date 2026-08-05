@@ -5,14 +5,12 @@ import "./fonts/roboto_mono/RobotoMono-Italic-VariableFont_wght.ttf";
 import "./fonts/roboto_mono/RobotoMono-VariableFont_wght.ttf";
 import { Player } from "./player.slint";
 import { StatusBar } from "./status_bar.slint";
+import { Home } from "./home.slint";
 import { PlayerData } from "./player.slint";
 export { PlayerData }
 import { StatusBarData } from "./status_bar.slint";
 export { StatusBarData }
-
-export enum State {
-    Player,
-}
+import { State, AppState } from "./state.slint";
 
 export component MainWindow inherits Window {
     width: 320px;
@@ -21,10 +19,15 @@ export component MainWindow inherits Window {
     default-font-family: "Roboto Mono";
     background: Theme.background;
 
-    property <State> displayed-screen: State.Player;
-    in-out property <State> active-screen: State.Player;
+    property <State> displayed-screen: State.Home;
+    in-out property <State> active-screen: AppState.state;
 
     property <bool> fading: false;
+
+    property <bool> should-show-lyrics-in-status-bar: PlayerData.has-lyrics && root.active-screen != State.Player;
+    changed should-show-lyrics-in-status-bar => {
+        StatusBarData.show-status-bar-lyrics = root.should-show-lyrics-in-status-bar;
+    }
 
     changed active-screen => {
         if (self.active-screen != self.displayed-screen) {
@@ -45,6 +48,18 @@ export component MainWindow inherits Window {
                 height: parent.height;
                 opacity: root.fading ? 0.0 : 1.0;
                 visible: root.displayed-screen == State.Player;
+
+                animate opacity {
+                    duration: 150ms;
+                    easing: ease-in-out;
+                }
+            }
+
+            home-layer := Home {
+                width: root.width;
+                height: parent.height;
+                opacity: root.fading ? 0.0 : 1.0;
+                visible: root.displayed-screen == State.Home;
 
                 animate opacity {
                     duration: 150ms;
