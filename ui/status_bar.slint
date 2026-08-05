@@ -9,6 +9,7 @@ import { PlayerData } from "player.slint";
 export global StatusBarData {
     in-out property <int> battery: 0;
     in-out property <bool> has_battery: false;
+    in-out property <bool> is_charging: false;
 
     in-out property <string> time: "00:00 XX";
     in-out property <bool> has_time: false;
@@ -29,7 +30,7 @@ export component StatusBar inherits Rectangle {
         if StatusBarData.has_battery : HorizontalLayout {
             visible: StatusBarData.has_battery;
             
-            Image {
+            if !StatusBarData.is_charging : Image {
                 source: StatusBarData.battery >= 0 && StatusBarData.battery <= 25 ? @image-url("assets/battery/25.svg") :
                         StatusBarData.battery >= 26 && StatusBarData.battery <= 50 ? @image-url("assets/battery/50.svg") :
                         StatusBarData.battery >= 51 && StatusBarData.battery <= 75 ? @image-url("assets/battery/75.svg") :
@@ -42,9 +43,17 @@ export component StatusBar inherits Rectangle {
                 vertical-alignment: center;
                 y: 3.5px;
             }
+            if StatusBarData.is_charging : Image {
+                source: @image-url("assets/battery/charging.svg");
+                width: 21px;
+                height: 11px;
+                colorize: Theme.text-2; 
+                vertical-alignment: center;
+                y: 3.5px;
+            }
 
             Rectangle {
-                width: 2px;
+                width: 4px;
             }
 
             Text {

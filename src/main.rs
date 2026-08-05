@@ -1,10 +1,12 @@
 mod lyrics;
 mod player;
+mod status_bar;
 
 use clap::Parser;
 use lyrics::Lyrics;
 use player::Player;
 use slint::SharedString;
+use slint::platform::Key::P;
 use std::path::PathBuf;
 use std::rc::Rc;
 use std::time::Duration;
@@ -49,8 +51,6 @@ fn main() -> anyhow::Result<()> {
 
     ui.global::<PlayerData>().set_has_lyrics(has_lyrics);
 
-    // Drive UI updates from a timer tick rather than blocking the UI
-    // thread — position/lyrics/progress all get refreshed here.
     let ui_weak = ui.as_weak();
     let player_for_timer = player.clone();
     let timer = slint::Timer::default();
@@ -81,6 +81,8 @@ fn main() -> anyhow::Result<()> {
                     ui.global::<PlayerData>().set_lyric_line(line.into());
                 }
             }
+
+            crate::status_bar::populate_status_bar(&ui)
         },
     );
 

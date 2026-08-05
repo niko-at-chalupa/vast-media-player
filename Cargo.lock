@@ -4660,12 +4660,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "shared-string"
-version = "0.1.7"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9055ba342b27a4c9dd998d72c214884420cc319f24cea89f87dc8befc2203ca7"
-
-[[package]]
 name = "shlex"
 version = "1.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -5650,9 +5644,9 @@ dependencies = [
  "anyhow",
  "audiotags",
  "battery",
+ "chrono",
  "clap",
  "rodio",
- "shared-string",
  "slint",
  "slint-build",
 ]
