@@ -4,8 +4,11 @@ import "./fonts/xanh_mono/XanhMono-Italic.ttf";
 import "./fonts/roboto_mono/RobotoMono-Italic-VariableFont_wght.ttf";
 import "./fonts/roboto_mono/RobotoMono-VariableFont_wght.ttf";
 import { Player } from "./player.slint";
+import { StatusBar } from "./status_bar.slint";
 import { PlayerData } from "./player.slint";
 export { PlayerData }
+import { StatusBarData } from "./status_bar.slint";
+export { StatusBarData }
 
 export enum State {
     Player,
@@ -29,20 +32,24 @@ export component MainWindow inherits Window {
         }
     }
 
-    Rectangle {
-        background: Theme.background;
-        width: root.width;
-        height: root.height;
+    VerticalLayout {
+        StatusBar {}
 
-        player-layer := Player {
+        Rectangle {
+            background: Theme.background;
             width: root.width;
-            height: root.height;
-            opacity: root.fading ? 0.0 : 1.0;
-            visible: root.displayed-screen == State.Player;
+            height: root.height - 18px;
 
-            animate opacity {
-                duration: 150ms;
-                easing: ease-in-out;
+            player-layer := Player {
+                width: root.width;
+                height: parent.height;
+                opacity: root.fading ? 0.0 : 1.0;
+                visible: root.displayed-screen == State.Player;
+
+                animate opacity {
+                    duration: 150ms;
+                    easing: ease-in-out;
+                }
             }
         }
     }

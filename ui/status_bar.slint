@@ -1,0 +1,99 @@
+import { Theme } from "./colours.slint";
+import { MarqueeText } from "./marquee.slint";
+import "./fonts/xanh_mono/XanhMono-Regular.ttf";
+import "./fonts/xanh_mono/XanhMono-Italic.ttf";
+import "./fonts/roboto_mono/RobotoMono-Italic-VariableFont_wght.ttf";
+import "./fonts/roboto_mono/RobotoMono-VariableFont_wght.ttf";
+import { PlayerData } from "player.slint";
+
+export global StatusBarData {
+    in-out property <int> battery: 0;
+    in-out property <bool> has_battery: false;
+
+    in-out property <string> time: "00:00 XX";
+    in-out property <bool> has_time: false;
+
+    in-out property <bool> show_status_bar_lyrics: false;
+}
+
+export component StatusBar inherits Rectangle {
+    width: 320px;
+    height: 18px;
+    background: Theme.background-2;
+
+    HorizontalLayout {
+        padding-left: 4px;
+        padding-right: 4px;
+        alignment: space-between;
+
+        if StatusBarData.has_battery : HorizontalLayout {
+            visible: StatusBarData.has_battery;
+            
+            Image {
+                source: StatusBarData.battery >= 0 && StatusBarData.battery <= 25 ? @image-url("assets/battery/25.svg") :
+                        StatusBarData.battery >= 26 && StatusBarData.battery <= 50 ? @image-url("assets/battery/50.svg") :
+                        StatusBarData.battery >= 51 && StatusBarData.battery <= 75 ? @image-url("assets/battery/75.svg") :
+                        StatusBarData.battery >= 76 && StatusBarData.battery <= 100 ? @image-url("assets/battery/100.svg") : 
+                        @image-url("assets/question.svg");
+
+                width: 21px;
+                height: 11px;
+                colorize: Theme.text-2; 
+                vertical-alignment: center;
+                y: 3.5px;
+            }
+
+            Rectangle {
+                width: 2px;
+            }
+
+            Text {
+                text: StatusBarData.battery + "%";
+                font-size: 10px;
+                color: Theme.text-2;
+                vertical-alignment: center;
+                font-family: "Roboto Mono";
+            }
+        }
+        if !StatusBarData.has_battery : Rectangle {}
+
+        Text {
+            visible: StatusBarData.has_time;
+            text: StatusBarData.time;
+            font-family: "Roboto Mono";
+            font-size: 10px;
+            font-weight: 400;
+            color: Theme.text-2;
+            height: 15px;
+            vertical-alignment: center;
+        }
+    }
+
+    Text {
+        text: StatusBarData.show_status_bar_lyrics ? PlayerData.lyric-line : "Vast Media Player";
+        height: 15px;
+        width: 200px;
+        font-family: "Roboto Mono";
+        color: Theme.text-2;
+        font-size: 10px;
+        font-weight: 400;
+        horizontal-alignment: center;
+        x: (parent.width - self.width) / 2;
+        y: (parent.height - self.height) / 2;
+    }
+
+    /*
+    MarqueeText {
+        text: PlayerData.lyric-line;
+        height: 15px;
+        width: 200px;
+        text-color: Theme.text-2;
+        font-family: "Roboto Mono";
+        font-size: 10px;
+        font-weight: 400;
+        speed: 40;
+        x: (parent.width - self.width) / 2;
+        y: (parent.height - self.height) / 2;
+    }
+    */
+}

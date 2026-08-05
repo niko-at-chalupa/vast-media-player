@@ -4,6 +4,7 @@ export component MarqueeText inherits Rectangle {
     in property <string> text;
     in property <length> gap: 48px;
     in property <float> speed: 60;
+    in property <color> text-color: #ffffff;
 
     width: 320px;
     height: 32px;
@@ -45,6 +46,7 @@ export component MarqueeText inherits Rectangle {
             font-size: root.font-size;
             vertical-alignment: center;
             height: parent.height;
+            color: root.text-color;
         }
 
         txt2 := Text {
@@ -56,6 +58,7 @@ export component MarqueeText inherits Rectangle {
             vertical-alignment: center;
             height: parent.height;
             visible: root.needs-scroll;
+            color: root.text-color;
         }
     }
 
