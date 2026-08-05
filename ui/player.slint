@@ -16,6 +16,85 @@ export global PlayerData {
     in-out property <bool> is-playing: false;
 }
 
+export component LyricCrossfade {
+    property <string> current-lyric: PlayerData.lyric-line;
+
+    property <string> displayed-text: "";
+    property <string> incoming-text: "";
+    property <bool> animating: false;
+
+    init => {
+        displayed-text = current-lyric;
+    }
+
+    changed current-lyric => {
+        if (current-lyric != displayed-text && current-lyric != incoming-text) {
+            incoming-text = current-lyric;
+            animating = true;
+            swap-timer.running = true;
+        }
+    }
+
+    swap-timer := Timer {
+        interval: 320ms;
+        running: false;
+        triggered => {
+            displayed-text = incoming-text;
+            animating = false;
+            self.running = false;
+        }
+    }
+
+    height: 40px;
+
+    Text {
+        text: displayed-text;
+        font-size: 14px;
+        color: PlayerData.has-lyrics ? Theme.text : #555555;
+        horizontal-alignment: center;
+        wrap: word-wrap;
+        width: 100%;
+        
+        y: 0px;
+        opacity: 1;
+
+        states [
+            active when animating: {
+                y: 20px;
+                opacity: 0;
+                in { 
+                    animate y { duration: 500ms; easing: ease-out-quart; }
+                    animate opacity { duration: 500ms;  easing: ease-out-quart; }
+                }
+            }
+        ]
+    }
+
+    // Incoming!!
+    Text {
+        text: incoming-text;
+        font-size: 14px;
+        color: PlayerData.has-lyrics ? Theme.text : #555555;
+        horizontal-alignment: center;
+        wrap: word-wrap;
+        width: 100%;
+        
+        y: -20px;
+        opacity: 0;
+
+        states [
+            active when animating: {
+                y: 0px;
+                opacity: 1;
+                in { 
+                    animate y { duration: 500ms; easing: ease-out-quart; }
+                    animate opacity { duration: 500ms;  easing: ease-out-quart; }
+                }
+            }
+        ]
+    }
+}
+
 export component Player inherits Rectangle {
     width: 320px;
     height: 240px;
@@ -45,12 +124,7 @@ export component Player inherits Rectangle {
             Rectangle {}
         }
 
-        Text {
-            text: PlayerData.has-lyrics ? PlayerData.lyric-line : "";
-            font-size: 14px;
-            color: PlayerData.has-lyrics ? Theme.text : #555555;
-            horizontal-alignment: center;
-            wrap: word-wrap;
+        LyricCrossfade {
             height: 40px;
         }
     }
