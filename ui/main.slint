@@ -35,6 +35,33 @@ export component MainWindow inherits Window {
         }
     }
 
+    forward-focus: main-focus-scope;
+
+    main-focus-scope := FocusScope {
+        key-pressed(event) => {
+            if (root.active-screen == State.Home) {
+                if (event.text == Key.S || event.text == Key.DownArrow || event.text == "s") {
+                    home-layer.navigate-down();
+                    return accept;
+                }
+                if (event.text == Key.W || event.text == Key.UpArrow || event.text == "w") {
+                    home-layer.navigate-up();
+                    return accept;
+                }
+                if (event.text == Key.F || event.text == " " || event.text == Key.Return || event.text == "f") {
+                    home-layer.activate-selected();
+                    return accept;
+                }
+            } else if (root.active-screen == State.Player) {
+                if (event.text == Key.Escape) {
+                    AppState.state = State.Home;
+                    return accept;
+                }
+            }
+            return reject;
+        }
+    }
+
     VerticalLayout {
         StatusBar {}
 

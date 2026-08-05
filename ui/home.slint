@@ -57,24 +57,17 @@ export component Home inherits Rectangle {
         if (index == 1) { debug("test"); }
     }
 
-    FocusScope {
-        init => { self.focus(); }
+    public function navigate-down() {
+        focused-index = Math.min(focused-index + 1, entries.length - 1);
+    }
+    public function navigate-up() {
+        focused-index = Math.max(focused-index - 1, 0);
+    }
+    public function activate-selected() {
+        root.entry-activated(focused-index);
+    }
 
-        key-pressed(event) => {
-            if (event.text == Key.S || event.text == Key.DownArrow) {
-                focused-index = Math.min(focused-index + 1, entries.length - 1);
-                return accept;
-            }
-            if (event.text == Key.W || event.text == Key.UpArrow) {
-                focused-index = Math.max(focused-index - 1, 0);
-                return accept;
-            }
-            if (event.text == Key.F || event.text == " " || event.text == Key.Return) {
-                root.entry-activated(focused-index);
-                return accept;
-            }
-            return reject;
-        }
+    Rectangle {
     }
 
     HorizontalLayout {
