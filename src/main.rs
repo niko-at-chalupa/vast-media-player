@@ -9,13 +9,9 @@ use std::path::PathBuf;
 use std::rc::Rc;
 use std::time::Duration;
 
-slint::include_modules!();
-
-/// Prototype iPod-style audio player.
 #[derive(Parser, Debug)]
-#[command(about = "Play an audio file with an iPod-style 320x240 UI")]
+#[command(about = "Play an audio file")]
 struct Cli {
-    /// Path to the audio file to play (mp3, wav, flac, ogg — whatever rodio's decoder supports)
     audio_file: PathBuf,
 }
 
@@ -23,6 +19,8 @@ fn format_time(d: Duration) -> String {
     let total_secs = d.as_secs();
     format!("{}:{:02}", total_secs / 60, total_secs % 60)
 }
+
+slint::include_modules!();
 
 fn main() -> anyhow::Result<()> {
     let cli = Cli::parse();
@@ -37,7 +35,7 @@ fn main() -> anyhow::Result<()> {
     let player = Rc::new(Player::play_file(&cli.audio_file)?);
 
     let ui = MainWindow::new()?;
-    ui.set_track_title(player.info.title.clone().into());
+    ui.global::<PlayerData>().set_track_title(player.info.title.clone().into());
 
     {
         let artists = player.info.artists.clone();
@@ -46,10 +44,10 @@ fn main() -> anyhow::Result<()> {
         } else {
             "[no artist tags]".to_string()
         };
-        ui.set_track_artist(SharedString::from(artists_string));
+        ui.global::<PlayerData>().set_track_artist(SharedString::from(artists_string));
     }
 
-    ui.set_has_lyrics(has_lyrics);
+    ui.global::<PlayerData>().set_has_lyrics(has_lyrics);
 
     // Drive UI updates from a timer tick rather than blocking the UI
     // thread — position/lyrics/progress all get refreshed here.
@@ -65,24 +63,22 @@ fn main() -> anyhow::Result<()> {
             };
 
             let elapsed = player_for_timer.elapsed();
-            ui.set_is_playing(player_for_timer.is_playing());
+            ui.global::<PlayerData>().set_is_playing(player_for_timer.is_playing());
 
             if let Some(total) = player_for_timer.total_duration() {
                 let frac = (elapsed.as_secs_f32() / total.as_secs_f32()).min(1.0);
-                ui.set_progress(frac);
-                ui.set_time_label(
+                ui.global::<PlayerData>().set_progress(frac);
+                ui.global::<PlayerData>().set_time_label(
                     format!("{} / {}", format_time(elapsed), format_time(total)).into(),
                 );
             } else {
-                // Unknown total duration: still show elapsed time, just
-                // no meaningful progress fraction.
-                ui.set_progress(0.0);
-                ui.set_time_label(format_time(elapsed).into());
+                ui.global::<PlayerData>().set_progress(0.0);
+                ui.global::<PlayerData>().set_time_label(format_time(elapsed).into());
             }
 
             if let Some(lyrics) = &lyrics {
                 if let Some(line) = lyrics.current_line(elapsed.as_secs_f64()) {
-                    ui.set_lyric_line(line.into());
+                    ui.global::<PlayerData>().set_lyric_line(line.into());
                 }
             }
         },

@@ -1,0 +1,95 @@
+import { Theme } from "./colours.slint";
+import "./fonts/xanh_mono/XanhMono-Regular.ttf";
+import "./fonts/xanh_mono/XanhMono-Italic.ttf";
+import "./fonts/roboto_mono/RobotoMono-Italic-VariableFont_wght.ttf";
+import "./fonts/roboto_mono/RobotoMono-VariableFont_wght.ttf";
+import { HorizontalBox, VerticalBox } from "std-widgets.slint";
+import { MarqueeText } from "./marquee.slint";
+
+export global PlayerData {
+    in-out property <string> track-title: "No Track Loaded";
+    in-out property <string> track-artist: "Vast...";
+    in-out property <string> lyric-line: "";
+    in-out property <bool> has-lyrics: false;
+    in-out property <float> progress: 0.0;
+    in-out property <string> time-label: "--:-- / --:--";
+    in-out property <bool> is-playing: false;
+}
+
+export component Player inherits Rectangle {
+    width: 320px;
+    height: 240px;
+    background: Theme.background;
+
+    // Track info
+    VerticalLayout {
+        padding: 14px;
+        spacing: 10px;
+
+        VerticalLayout {
+            MarqueeText {
+                text: PlayerData.track-title;
+                font-size: 18px;
+                font-weight: 700;
+                font-family: "Xanh Mono";
+                width: parent.width;
+            }
+            Text {
+                text: PlayerData.track-artist;
+                font-size: 12px;
+                color: #aaaaaa;
+                horizontal-alignment: left;
+                overflow: elide;
+            }
+
+            Rectangle {}
+        }
+
+        Text {
+            text: PlayerData.has-lyrics ? PlayerData.lyric-line : "";
+            font-size: 14px;
+            color: PlayerData.has-lyrics ? Theme.text : #555555;
+            horizontal-alignment: center;
+            wrap: word-wrap;
+            height: 40px;
+        }
+    }
+
+    // Progress
+    VerticalLayout {
+        // It's a spacer
+        Rectangle {}
+
+        HorizontalLayout {
+            padding-left: 4px;
+            padding-right: 4px;
+            Text {
+                text: PlayerData.time-label;
+                font-size: 10px;
+                color: Theme.text-2;
+                horizontal-alignment: left;
+                height: 16px;
+            }
+
+            Image {
+                source: PlayerData.is-playing ? @image-url("assets/pause.svg") : @image-url("assets/play.svg");
+                width: 10px;
+                height: 10px;
+                colorize: Theme.text-2; 
+                vertical-alignment: center;
+            }
+        }
+
+        Rectangle {
+            height: 9px;
+            background: Theme.background-2;
+            Rectangle {
+                x: 0px;
+                y: 0px;
+                width: parent.width * PlayerData.progress;
+                height: parent.height;
+                background: Theme.primary;
+            }
+        }
+    }
+}
