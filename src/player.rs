@@ -52,7 +52,6 @@ pub struct Player {
     _stream: OutputStream,
     _stream_handle: OutputStreamHandle,
     sink: Sink,
-    started_at: Instant,
     total_duration: Option<Duration>,
     pub info: TrackInfo,
 }
@@ -75,7 +74,6 @@ impl Player {
             _stream: stream,
             _stream_handle: stream_handle,
             sink,
-            started_at: Instant::now(),
             total_duration,
             info: TrackInfo::from_path(path),
         })
@@ -97,11 +95,8 @@ impl Player {
         self.sink.empty()
     }
 
-    /// Elapsed playback time. Naive (doesn't account for seeking, since
-    /// this prototype doesn't support seeking yet) but fine as a stand-in
-    /// until real position tracking is added.
     pub fn elapsed(&self) -> Duration {
-        self.started_at.elapsed()
+        self.sink.get_pos()
     }
 
     /// Total track duration, if the decoder was able to determine it.
