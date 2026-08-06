@@ -10,20 +10,6 @@ export global SidebarEntryColors {
     in-out property <color> active: #ebd0ff;
 }
 
-export global SystemData {
-    in-out property <string> os;
-    in-out property <string> host;
-    in-out property <string> kernel;
-    in-out property <string> uptime;
-    in-out property <string> display;
-    in-out property <string> cpu;
-    //in-out property <string> gpu;
-    in-out property <string> memory;
-    in-out property <string> disk;
-
-    in-out property <bool> show_system_data: false;
-}
-
 export component SidebarEntry inherits Rectangle {
     in property <string> text;
     in-out property <bool> focused: false;
