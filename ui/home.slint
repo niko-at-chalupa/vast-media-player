@@ -5,8 +5,23 @@ import { AppState, State } from "./state.slint";
 
 export global SidebarEntryColors {
     in-out property <color> hover: #35293c;
+    in-out property <color> hover-border: #3c2e44;
 
     in-out property <color> active: #ebd0ff;
+}
+
+export global SystemData {
+    in-out property <string> os;
+    in-out property <string> host;
+    in-out property <string> kernel;
+    in-out property <string> uptime;
+    in-out property <string> display;
+    in-out property <string> cpu;
+    //in-out property <string> gpu;
+    in-out property <string> memory;
+    in-out property <string> disk;
+
+    in-out property <bool> show_system_data: false;
 }
 
 export component SidebarEntry inherits Rectangle {
@@ -19,8 +34,12 @@ export component SidebarEntry inherits Rectangle {
     width: 120px;
     height: 25px;
 
-    animate background {
-        duration: 100ms;
+    border-radius: 7px;
+    border-width: focused ? 2px : 0px;
+    border-color: focused ? SidebarEntryColors.hover-border : transparent;
+
+    animate background, border-color, border-width {
+        duration: 200ms;
         easing: ease-out;
     }
 
@@ -36,7 +55,7 @@ export component SidebarEntry inherits Rectangle {
             text: root.text;
             height: 15px;
             vertical-alignment: center;
-            font-size: 15px;
+            font-size: 13px;
             font-family: "Roboto Mono";
         }
     }
@@ -71,10 +90,11 @@ export component Home inherits Rectangle {
     }
 
     HorizontalLayout {
-        Rectangle {
-            background: Theme.background-2;
-
+        padding: 5px;
+        spacing: 5px;
+        Window {
             VerticalLayout {
+                padding: 5px;
                 alignment: start;
 
                 for entry[idx] in root.entries : SidebarEntry {
@@ -87,16 +107,8 @@ export component Home inherits Rectangle {
 
         Rectangle {
             VerticalLayout {
-                padding: 5px;
+                Text {
 
-                Window {
-                    height: 75px;
-
-                    Image {
-                        source: @image-url("assets/logo/vastdark.png");
-                        height: parent.height -5px;
-                        width: parent.width -5px;
-                    }
                 }
             }
         }
