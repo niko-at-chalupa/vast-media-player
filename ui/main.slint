@@ -73,11 +73,15 @@ export component MainWindow inherits Window {
 
     VerticalLayout {
         StatusBar {}
+        Rectangle {
+            height: 1px;
+            background: Theme.text-2;
+        }
 
         Rectangle {
             background: Theme.background;
             width: root.width;
-            height: root.height - 18px;
+            height: root.height - 19px;
 
             player-layer := Player {
                 width: root.width;
