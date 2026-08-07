@@ -1,11 +1,13 @@
 use rodio::{Decoder, OutputStream, OutputStreamHandle, Sink, Source};
+use std::collections::HashMap;
 use std::fs::File;
 use std::io::BufReader;
 use std::path::{Path, PathBuf};
 use std::time::{Duration, Instant};
 use audiotags::Tag;
+use std::hash::{Hash, Hasher};
 
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone, Default, Hash, PartialEq, Eq)]
 pub struct TrackInfo {
     pub title: String,
     pub artists: Vec<String>,
@@ -60,11 +62,12 @@ impl TrackInfo {
         }
         Ok(tracks)
     }
+
+    pub fn play(&self) -> anyhow::Result<Player> {
+        Player::play_file(&self.path)
+    }
 }
 
-/// Owns the audio output stream + sink for a currently loaded track.
-/// Must be kept alive for the duration of playback (dropping it stops
-/// the audio), so hang on to the `Player` for as long as you want sound.
 pub struct Player {
     _stream: OutputStream,
     _stream_handle: OutputStreamHandle,
@@ -74,10 +77,6 @@ pub struct Player {
 }
 
 impl Player {
-    /// Loads and immediately begins playing the given audio file.
-    /// This is the single function the rest of the app should call to
-    /// start playback — extend internals (crossfade, gapless, EQ, etc.)
-    /// behind this signature as the project grows.
     pub fn play_file(path: &Path) -> anyhow::Result<Player> {
         let (stream, stream_handle) = OutputStream::try_default()?;
         let sink = Sink::try_new(&stream_handle)?;
@@ -116,10 +115,49 @@ impl Player {
         self.sink.get_pos()
     }
 
-    /// Total track duration, if the decoder was able to determine it.
-    /// Not all formats/containers expose this reliably — treat None as
-    /// a normal case to handle in the UI (e.g. hide/zero the progress bar).
     pub fn total_duration(&self) -> Option<Duration> {
         self.total_duration
+    }
+}
+
+#[derive(Eq, Hash, PartialEq, Clone)]
+pub struct TrackId(u64);
+
+pub struct Queue {
+    track_order: Vec<TrackId>,
+    tracks: HashMap<TrackId, TrackInfo>,
+    player: Option<Player>,
+}
+
+impl Queue {
+    pub fn track_order(&self) -> &Vec<TrackId> {
+        &self.track_order
+    }
+
+    pub fn tracks(&self) -> &HashMap<TrackId, TrackInfo> {
+        &self.tracks
+    }
+
+    pub fn player(&self) -> &Option<Player> {
+        &self.player
+    }
+
+    pub fn clear_tracks(&mut self) {
+        self.tracks.clear();
+        self.track_order.clear();
+    }
+
+    pub fn insert_tracks(&mut self, tracks: &Vec<TrackInfo>) {
+        let owned_tracks = tracks.clone();
+        for track in owned_tracks {
+            let track_id: TrackId;
+            {
+                let mut hasher = fxhash::FxHasher64::default();
+                track.hash(&mut hasher);
+                track_id = TrackId(hasher.finish());
+            }
+            self.tracks.insert(track_id.clone(), track);
+            self.track_order.push(track_id);
+        }
     }
 }
