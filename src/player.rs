@@ -43,6 +43,23 @@ impl TrackInfo {
             path: path.to_path_buf(),
         }
     }
+
+    pub fn from_dir(path: &Path) -> anyhow::Result<Vec<Self>> {
+        let mut tracks = Vec::new();
+        for entry in std::fs::read_dir(path)? {
+            let entry = entry?;
+            let path = entry.path();
+            if path.is_file() {
+                if let Some(ext) = path.extension().and_then(|s| s.to_str()) {
+                    let ext_lower = ext.to_lowercase();
+                    if matches!(ext_lower.as_str(), "mp3" | "flac" | "wav" | "ogg" | "oga" | "m4a" | "mp4") {
+                        tracks.push(Self::from_path(&path));
+                    }
+                }
+            }
+        }
+        Ok(tracks)
+    }
 }
 
 /// Owns the audio output stream + sink for a currently loaded track.
