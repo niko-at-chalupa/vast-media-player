@@ -112,6 +112,11 @@ export component Player inherits Rectangle {
                 font-weight: 700;
                 font-family: "Xanh Mono";
                 width: parent.width;
+                speed: PlayerData.is-playing ? 60 : 25;
+                animate speed {
+                    duration: 1200ms;
+                    easing: ease-out;
+                }
             }
             Text {
                 text: PlayerData.track-artist;
