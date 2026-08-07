@@ -147,9 +147,8 @@ impl Queue {
         self.track_order.clear();
     }
 
-    pub fn insert_tracks(&mut self, tracks: &Vec<TrackInfo>) {
-        let owned_tracks = tracks.clone();
-        for track in owned_tracks {
+    pub fn insert_tracks(&mut self, tracks: Vec<TrackInfo>) {
+        for track in tracks {
             let track_id: TrackId;
             {
                 let mut hasher = fxhash::FxHasher64::default();
