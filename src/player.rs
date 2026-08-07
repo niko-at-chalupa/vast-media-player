@@ -129,6 +129,16 @@ pub struct Queue {
     player: Option<Player>,
 }
 
+impl Default for Queue {
+    fn default() -> Self {
+        Self {
+            track_order: Vec::new(),
+            tracks: HashMap::new(),
+            player: None,
+        }
+    }
+}
+
 impl Queue {
     pub fn track_order(&self) -> &Vec<TrackId> {
         &self.track_order
@@ -158,5 +168,14 @@ impl Queue {
             self.tracks.insert(track_id.clone(), track);
             self.track_order.push(track_id);
         }
+    }
+
+    pub fn play_index(&mut self, index: usize) -> anyhow::Result<()> {
+        if let Some(track_id) = self.track_order.get(index) {
+            if let Some(track) = self.tracks.get(track_id) {
+                self.player = Some(track.play()?);
+            }
+        }
+        Ok(())
     }
 }
