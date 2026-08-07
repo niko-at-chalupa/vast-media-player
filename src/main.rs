@@ -6,10 +6,12 @@ use clap::Parser;
 use lyrics::Lyrics;
 use player::Player;
 use slint::SharedString;
-use slint::platform::Key::P;
+// use slint::platform::Key::P;
 use std::path::PathBuf;
+use std::sync::mpsc::{channel, Receiver};
 use std::rc::Rc;
 use std::time::Duration;
+use souvlaki::{MediaControls, MediaControlEvent, PlatformConfig};
 
 #[derive(Parser, Debug)]
 #[command(about = "Play an audio file")]
@@ -51,6 +53,20 @@ fn main() -> anyhow::Result<()> {
 
     ui.global::<PlayerData>().set_has_lyrics(has_lyrics);
 
+    let mut controls = MediaControls::new(PlatformConfig {
+        dbus_name: "vast-media-player",
+        display_name: "Vast Media Player",
+        hwnd: None,
+    })?;
+
+    let (mpris_tx, mpris_rx): (_, Receiver<()>) = channel();
+    controls.attach(move |event| match event {
+        MediaControlEvent::Play | MediaControlEvent::Pause | MediaControlEvent::Toggle => {
+            let _ = mpris_tx.send(());
+        }
+        _ => {}
+    })?;
+
     let ui_weak = ui.as_weak();
     let player_for_timer = player.clone();
     let timer = slint::Timer::default();
@@ -80,6 +96,10 @@ fn main() -> anyhow::Result<()> {
                 if let Some(line) = lyrics.current_line(elapsed.as_secs_f64()) {
                     ui.global::<PlayerData>().set_lyric_line(line.into());
                 }
+            }
+
+            if mpris_rx.try_recv().is_ok() {
+                player_for_timer.toggle_pause();
             }
 
             crate::status_bar::populate_status_bar(&ui)
