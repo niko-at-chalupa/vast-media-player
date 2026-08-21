@@ -130,7 +130,7 @@ pub struct Queue {
     track_order: Vec<TrackId>,
     tracks: HashMap<TrackId, TrackInfo>,
     player: Option<Rc<RefCell<Player>>>,
-    currently_playing: Option<TrackId>,
+    current_index: Option<usize>,
 }
 
 impl Default for Queue {
@@ -139,7 +139,7 @@ impl Default for Queue {
             track_order: Vec::new(),
             tracks: HashMap::new(),
             player: None,
-            currently_playing: None,
+            current_index: None,
         }
     }
 }
@@ -157,8 +157,8 @@ impl Queue {
         &self.player
     }
 
-    pub fn currently_playing(&self) -> &Option<TrackId> {
-        &self.currently_playing
+    pub fn current_index(&self) -> &Option<usize> {
+        &self.current_index
     }
 
     pub fn clear_tracks(&mut self) {
@@ -179,13 +179,52 @@ impl Queue {
         }
     }
 
-    pub fn play_track(&mut self, track_id: TrackId) -> anyhow::Result<()> {
+    pub fn play_at(&mut self, index: usize) -> anyhow::Result<()> {
+        let track_id = self.track_order.get(index)
+            .context("Index out of bounds")?
+            .clone();
         let track = self.tracks.get(&track_id).context("Queue does not contain track")?;
         let player = track.play()?;
 
         self.player = Some(Rc::new(RefCell::new(player)));
-        self.currently_playing = Some(track_id);
+        self.current_index = Some(index);
 
         Ok(())
+    }
+
+    pub fn play_next(&mut self) -> anyhow::Result<bool> {
+        let next_index = match self.current_index {
+            Some(i) => i + 1,
+            None => 0, // nothing playing yet, start from the beginning
+        };
+
+        if next_index < self.track_order.len() {
+            self.play_at(next_index)?;
+            Ok(true)
+        } else {
+            self.player = None;
+            self.current_index = None;
+            Ok(false)
+        }
+    }
+
+    pub fn play_previous(&mut self) -> anyhow::Result<bool> {
+        match self.current_index {
+            Some(i) if i > 0 => {
+                self.play_at(i - 1)?;
+                Ok(true)
+            }
+            _ => Ok(false),
+        }
+    }
+
+    pub fn currently_playing(&self) -> Option<&TrackId> {
+        let idx = self.current_index?;
+        self.track_order.get(idx)
+    }
+
+    pub fn currently_playing_info(&self) -> Option<&TrackInfo> {
+        let id = self.currently_playing()?;
+        self.tracks.get(id)
     }
 }

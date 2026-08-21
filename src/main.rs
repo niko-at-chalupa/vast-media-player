@@ -51,8 +51,7 @@ fn main() -> anyhow::Result<()> {
     }
 
     let player: Rc<RefCell<Player>> = {
-        let track_id = queue.borrow().track_order().first().context("Queue should not be empty")?.to_owned();
-        queue.borrow_mut().play_track(track_id)?;
+        queue.borrow_mut().play_at(0)?;
         queue.borrow().player().clone().context("Player should exist after playing track")?
     };
 
