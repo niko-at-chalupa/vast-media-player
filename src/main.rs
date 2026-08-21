@@ -8,12 +8,12 @@ use lyrics::Lyrics;
 use player::Player;
 use slint::SharedString;
 // use slint::platform::Key::P;
-use std::path::PathBuf;
-use std::sync::mpsc::{channel, Receiver};
-use std::rc::Rc;
-use std::time::Duration;
-use souvlaki::{MediaControls, MediaControlEvent, PlatformConfig};
+use souvlaki::{MediaControlEvent, MediaControls, PlatformConfig};
 use std::cell::RefCell;
+use std::path::PathBuf;
+use std::rc::Rc;
+use std::sync::mpsc::{channel, Receiver};
+use std::time::Duration;
 
 use crate::player::{Queue, TrackInfo};
 
@@ -37,9 +37,7 @@ fn main() -> anyhow::Result<()> {
         anyhow::bail!("Audio file not found: {}", cli.audio_file.display());
     }
 
-    let queue: Rc<RefCell<Queue>> = Rc::new(RefCell::new(
-        Queue::default()
-    ));
+    let queue: Rc<RefCell<Queue>> = Rc::new(RefCell::new(Queue::default()));
     {
         let tracks: Vec<TrackInfo>;
         if cli.audio_file.is_dir() {
@@ -52,13 +50,18 @@ fn main() -> anyhow::Result<()> {
 
     let player: Rc<RefCell<Player>> = {
         queue.borrow_mut().play_at(0)?;
-        queue.borrow().player().clone().context("Player should exist after playing track")?
+        queue
+            .borrow()
+            .player()
+            .clone()
+            .context("Player should exist after playing track")?
     };
 
     let mut lyrics: Option<Lyrics> = Lyrics::find_and_load_for(&player.borrow().info.path);
 
     let ui = MainWindow::new()?;
-    ui.global::<PlayerData>().set_track_title(player.borrow().info.title.clone().into());
+    ui.global::<PlayerData>()
+        .set_track_title(player.borrow().info.title.clone().into());
 
     {
         let artists = player.borrow().info.artists.clone();
@@ -67,7 +70,8 @@ fn main() -> anyhow::Result<()> {
         } else {
             "[no artist tags]".to_string()
         };
-        ui.global::<PlayerData>().set_track_artist(SharedString::from(artists_string));
+        ui.global::<PlayerData>()
+            .set_track_artist(SharedString::from(artists_string));
     }
 
     ui.global::<PlayerData>().set_has_lyrics(lyrics.is_some());
@@ -87,7 +91,10 @@ fn main() -> anyhow::Result<()> {
     })?;
 
     let ui_weak = ui.as_weak();
-    let player_for_timer = player.clone();
+    let queue_for_timer = queue.clone();
+    let mut lyrics_for_timer = lyrics;
+    let mut last_index = queue_for_timer.borrow().current_index();
+
     let timer = slint::Timer::default();
     timer.start(
         slint::TimerMode::Repeated,
@@ -97,10 +104,27 @@ fn main() -> anyhow::Result<()> {
                 return;
             };
 
-            let elapsed = player_for_timer.borrow().elapsed();
-            ui.global::<PlayerData>().set_is_playing(player_for_timer.borrow().is_playing());
+            let player = {
+                let q = queue_for_timer.borrow();
+                match q.player() {
+                    Some(p) => p.clone(),
+                    None => return,
+                }
+            };
 
-            if let Some(total) = player_for_timer.borrow().total_duration() {
+            let (elapsed, is_playing, is_finished, total) = {
+                let p = player.borrow();
+                (
+                    p.elapsed(),
+                    p.is_playing(),
+                    p.is_finished(),
+                    p.total_duration(),
+                )
+            };
+
+            ui.global::<PlayerData>().set_is_playing(is_playing);
+
+            if let Some(total) = total {
                 let frac = (elapsed.as_secs_f32() / total.as_secs_f32()).min(1.0);
                 ui.global::<PlayerData>().set_progress(frac);
                 ui.global::<PlayerData>().set_time_label(
@@ -108,17 +132,43 @@ fn main() -> anyhow::Result<()> {
                 );
             } else {
                 ui.global::<PlayerData>().set_progress(0.0);
-                ui.global::<PlayerData>().set_time_label(format_time(elapsed).into());
+                ui.global::<PlayerData>()
+                    .set_time_label(format_time(elapsed).into());
             }
 
-            if let Some(lyrics) = &lyrics {
+            if let Some(lyrics) = &lyrics_for_timer {
                 if let Some(line) = lyrics.current_line(elapsed.as_secs_f64()) {
                     ui.global::<PlayerData>().set_lyric_line(line.into());
                 }
             }
 
             if mpris_rx.try_recv().is_ok() {
-                player_for_timer.borrow().toggle_pause();
+                player.borrow().toggle_pause();
+            }
+
+            let current_index = queue_for_timer.borrow().current_index();
+            if current_index != last_index {
+                last_index = current_index;
+                if let Some(p) = queue_for_timer.borrow().player() {
+                    let p = p.borrow();
+                    ui.global::<PlayerData>()
+                        .set_track_title(p.info.title.clone().into());
+                    let artists_string = if !p.info.artists.is_empty() {
+                        p.info.artists.join(", ")
+                    } else {
+                        "[no artist tags]".to_string()
+                    };
+                    ui.global::<PlayerData>()
+                        .set_track_artist(SharedString::from(artists_string));
+
+                    lyrics_for_timer = Lyrics::find_and_load_for(&p.info.path);
+                    ui.global::<PlayerData>()
+                        .set_has_lyrics(lyrics_for_timer.is_some());
+                }
+            }
+
+            if is_finished {
+                let _ = queue_for_timer.borrow_mut().play_next();
             }
 
             crate::status_bar::populate_status_bar(&ui)

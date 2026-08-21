@@ -1,9 +1,9 @@
-use slint::ComponentHandle;
-use battery::units::ratio::percent;
 use crate::{MainWindow, StatusBarData};
-use std::{fmt::format, time::SystemTime};
-use slint::SharedString;
+use battery::units::ratio::percent;
 use chrono::{DateTime, Local};
+use slint::ComponentHandle;
+use slint::SharedString;
+use std::{fmt::format, time::SystemTime};
 
 fn get_battery() -> Result<Option<battery::Battery>, battery::Error> {
     let manager = battery::Manager::new()?;
@@ -34,5 +34,6 @@ pub fn populate_status_bar(ui: &MainWindow) {
     let datetime: DateTime<Local> = system_time.into();
     let formatted_time = datetime.format("%I:%M %p").to_string();
     ui.global::<StatusBarData>().set_has_time(true);
-    ui.global::<StatusBarData>().set_time(SharedString::from(formatted_time));
+    ui.global::<StatusBarData>()
+        .set_time(SharedString::from(formatted_time));
 }
