@@ -1,14 +1,14 @@
 use anyhow::Context;
+use audiotags::Tag;
 use rodio::{Decoder, OutputStream, OutputStreamHandle, Sink, Source};
+use std::cell::RefCell;
 use std::collections::HashMap;
 use std::fs::File;
+use std::hash::{Hash, Hasher};
 use std::io::BufReader;
 use std::path::{Path, PathBuf};
-use std::time::Duration;
-use audiotags::Tag;
-use std::hash::{Hash, Hasher};
-use std::cell::RefCell;
 use std::rc::Rc;
+use std::time::Duration;
 
 #[derive(Debug, Clone, Default, Hash, PartialEq, Eq)]
 pub struct TrackInfo {
@@ -57,7 +57,10 @@ impl TrackInfo {
             if path.is_file() {
                 if let Some(ext) = path.extension().and_then(|s| s.to_str()) {
                     let ext_lower = ext.to_lowercase();
-                    if matches!(ext_lower.as_str(), "mp3" | "flac" | "wav" | "ogg" | "oga" | "m4a" | "mp4") {
+                    if matches!(
+                        ext_lower.as_str(),
+                        "mp3" | "flac" | "wav" | "ogg" | "oga" | "m4a" | "mp4"
+                    ) {
                         tracks.push(Self::from_path(&path));
                     }
                 }
@@ -157,8 +160,8 @@ impl Queue {
         &self.player
     }
 
-    pub fn current_index(&self) -> &Option<usize> {
-        &self.current_index
+    pub fn current_index(&self) -> Option<usize> {
+        self.current_index
     }
 
     pub fn clear_tracks(&mut self) {
@@ -180,10 +183,15 @@ impl Queue {
     }
 
     pub fn play_at(&mut self, index: usize) -> anyhow::Result<()> {
-        let track_id = self.track_order.get(index)
+        let track_id = self
+            .track_order
+            .get(index)
             .context("Index out of bounds")?
             .clone();
-        let track = self.tracks.get(&track_id).context("Queue does not contain track")?;
+        let track = self
+            .tracks
+            .get(&track_id)
+            .context("Queue does not contain track")?;
         let player = track.play()?;
 
         self.player = Some(Rc::new(RefCell::new(player)));
