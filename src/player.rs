@@ -157,6 +157,10 @@ impl Queue {
         &self.player
     }
 
+    pub fn currently_playing(&self) -> &Option<TrackId> {
+        &self.currently_playing
+    }
+
     pub fn clear_tracks(&mut self) {
         self.tracks.clear();
         self.track_order.clear();
@@ -180,6 +184,7 @@ impl Queue {
         let player = track.play()?;
 
         self.player = Some(Rc::new(RefCell::new(player)));
+        self.currently_playing = Some(track_id);
 
         Ok(())
     }
