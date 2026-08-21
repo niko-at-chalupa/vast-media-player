@@ -1,11 +1,14 @@
+use anyhow::Context;
 use rodio::{Decoder, OutputStream, OutputStreamHandle, Sink, Source};
 use std::collections::HashMap;
 use std::fs::File;
 use std::io::BufReader;
 use std::path::{Path, PathBuf};
-use std::time::{Duration, Instant};
+use std::time::Duration;
 use audiotags::Tag;
 use std::hash::{Hash, Hasher};
+use std::cell::RefCell;
+use std::rc::Rc;
 
 #[derive(Debug, Clone, Default, Hash, PartialEq, Eq)]
 pub struct TrackInfo {
@@ -126,7 +129,8 @@ pub struct TrackId(u64);
 pub struct Queue {
     track_order: Vec<TrackId>,
     tracks: HashMap<TrackId, TrackInfo>,
-    player: Option<Player>,
+    player: Option<Rc<RefCell<Player>>>,
+    currently_playing: Option<TrackId>,
 }
 
 impl Default for Queue {
@@ -135,6 +139,7 @@ impl Default for Queue {
             track_order: Vec::new(),
             tracks: HashMap::new(),
             player: None,
+            currently_playing: None,
         }
     }
 }
@@ -148,7 +153,7 @@ impl Queue {
         &self.tracks
     }
 
-    pub fn player(&self) -> &Option<Player> {
+    pub fn player(&self) -> &Option<Rc<RefCell<Player>>> {
         &self.player
     }
 
@@ -170,12 +175,12 @@ impl Queue {
         }
     }
 
-    pub fn play_index(&mut self, index: usize) -> anyhow::Result<()> {
-        if let Some(track_id) = self.track_order.get(index) {
-            if let Some(track) = self.tracks.get(track_id) {
-                self.player = Some(track.play()?);
-            }
-        }
+    pub fn play_track(&mut self, track_id: TrackId) -> anyhow::Result<()> {
+        let track = self.tracks.get(&track_id).context("Queue does not contain track")?;
+        let player = track.play()?;
+
+        self.player = Some(Rc::new(RefCell::new(player)));
+
         Ok(())
     }
 }
