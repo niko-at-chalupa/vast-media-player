@@ -142,6 +142,7 @@ fn main() -> anyhow::Result<()> {
                     MediaControlEvent::Pause => player.borrow().set_pause(true),
                     MediaControlEvent::Toggle => player.borrow().toggle_pause(),
                     MediaControlEvent::Next => { 
+                        ui.global::<PlayerData>().set_extra_info("".into());
                         let _ = queue_for_timer.borrow_mut().play_next();
                     },
                     MediaControlEvent::Previous => {
