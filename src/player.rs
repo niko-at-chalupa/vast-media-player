@@ -143,6 +143,16 @@ impl Player {
     pub fn stop(&self) {
         self.sink.stop();
     }
+
+    pub fn seek_to(&self, position: Duration) -> anyhow::Result<()> {
+        self.sink
+            .try_seek(position)
+            .map_err(|e| anyhow::anyhow!("seek failed: {e}"))
+    }
+
+    pub fn seek_to_start(&self) -> anyhow::Result<()> {
+        self.seek_to(Duration::ZERO)
+    }
 }
 
 #[derive(Eq, Hash, PartialEq, Clone)]
