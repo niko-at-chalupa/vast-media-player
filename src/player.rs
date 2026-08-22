@@ -9,6 +9,7 @@ use std::io::BufReader;
 use std::path::{Path, PathBuf};
 use std::rc::Rc;
 use std::time::Duration;
+use std::fmt;
 
 #[derive(Debug, Clone, Default, Hash, PartialEq, Eq)]
 pub struct TrackInfo {
@@ -74,6 +75,12 @@ impl TrackInfo {
     }
 }
 
+impl fmt::Display for TrackInfo {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.title)
+    }
+}
+
 pub struct Player {
     _stream: OutputStream,
     _stream_handle: OutputStreamHandle,
@@ -106,6 +113,13 @@ impl Player {
             self.sink.play();
         } else {
             self.sink.pause();
+        }
+    }
+    
+    pub fn set_pause(&self, is_paused: bool) {
+        match is_paused {
+            true => self.sink.pause(),
+            false => self.sink.play(),
         }
     }
 
