@@ -7,6 +7,7 @@ use clap::Parser;
 use lyrics::Lyrics;
 use player::Player;
 use slint::SharedString;
+use slint::platform::Key::T;
 // use slint::platform::Key::P;
 use souvlaki::{MediaControlEvent, MediaControls, PlatformConfig};
 use std::cell::RefCell;
@@ -116,21 +117,6 @@ fn main() -> anyhow::Result<()> {
                 }
             };
 
-            if let Ok(msg) = mpris_rx.try_recv() {
-                match msg {
-                    MediaControlEvent::Play => player.borrow().set_pause(false),
-                    MediaControlEvent::Pause => player.borrow().set_pause(true),
-                    MediaControlEvent::Toggle => player.borrow().toggle_pause(),
-                    MediaControlEvent::Next => { 
-                        let _ = queue_for_timer.borrow_mut().play_next();
-                    },
-                    MediaControlEvent::Previous => { 
-                        let _ = queue_for_timer.borrow_mut().play_previous();
-                    },
-                    _ => ()
-                }
-            }
-
             let (elapsed, is_playing, is_finished, total) = {
                 let p = player.borrow();
                 (
@@ -140,6 +126,42 @@ fn main() -> anyhow::Result<()> {
                     p.total_duration(),
                 )
             };
+
+            let restart_on_previous: bool;
+            const RESTART_THRESHOLD: Duration = Duration::from_secs(4);
+            if elapsed > RESTART_THRESHOLD {
+                restart_on_previous = true;
+                ui.global::<PlayerData>().set_extra_info("using ⏮ will attempt to restart track".into());
+            } else {
+                restart_on_previous = false;
+            }
+
+            if let Ok(msg) = mpris_rx.try_recv() {
+                match msg {
+                    MediaControlEvent::Play => player.borrow().set_pause(false),
+                    MediaControlEvent::Pause => player.borrow().set_pause(true),
+                    MediaControlEvent::Toggle => player.borrow().toggle_pause(),
+                    MediaControlEvent::Next => { 
+                        let _ = queue_for_timer.borrow_mut().play_next();
+                    },
+                    MediaControlEvent::Previous => {
+                        if restart_on_previous {
+                            if player.borrow().seek_to_start().is_err() {
+                                println!("Error seeking to start");
+                                ui.global::<PlayerData>().set_extra_info("".into());
+                                ui.global::<PlayerData>().set_extra_info("error seeking to start; went to previous track".into());
+                                let _ = queue_for_timer.borrow_mut().play_previous();
+                            } else {
+                                ui.global::<PlayerData>().set_extra_info("error seeking to start; went to previous track".into());
+                                ui.global::<PlayerData>().set_extra_info("seeked to start; press ⏮ to go to previous track".into());
+                            }
+                        } else {
+                            let _ = queue_for_timer.borrow_mut().play_previous();
+                        }
+                    },
+                    _ => ()
+                }
+            }
 
             ui.global::<PlayerData>().set_is_playing(is_playing);
 

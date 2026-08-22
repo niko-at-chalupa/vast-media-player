@@ -15,56 +15,140 @@ export global StatusBarData {
     in-out property <bool> has_time: false;
 
     in-out property <bool> show_status_bar_lyrics: false;
+    in-out property <bool> show_player_info: false;
 }
 
 export component StatusBarLyricsAndWhatever {
-    property <string> current-lyric: PlayerData.lyric-line;
+    property <string> current-lyric: PlayerData.lyric-line.is-empty ? "" : ("♪ " + PlayerData.lyric-line + " ♪");
+    property <string> current-player-info: PlayerData.extra-info.is-empty ? "" : (PlayerData.extra-info);
 
     property <string> displayed-text: "";
     property <string> pending-text: "";
     property <bool> fading-out: false;
     property <bool> show_lyrics: StatusBarData.show_status_bar_lyrics;
+    property <bool> show_player_info: StatusBarData.show_player_info;
+    property <bool> italic: false;
 
-    init => {
-        displayed-text = current-lyric;
+    property <string> current-alert: "";
+    property <string> next-alert: "";
+    property <bool> pending-is-alert: false;
+    property <bool> displaying-alert: false;
+
+    function enqueue-alert(text: string) {
+        if (text.is-empty) {
+            return;
+        }
+        if (current-alert.is-empty) {
+            current-alert = text;
+            trigger-update();
+            alert-timer.running = true;
+        } else {
+            next-alert = text;
+        }
     }
 
-    changed current-lyric => {
-        pending-text = current-lyric;
-        fading-out = true;
-        swap-timer.running = true;
+    function advance-alert() {
+        if (!next-alert.is-empty) {
+            current-alert = next-alert;
+            next-alert = "";
+            trigger-update();
+            alert-timer.running = true;
+        } else {
+            current-alert = "";
+            trigger-update();
+        }
     }
 
-    changed show_lyrics => {
-        root.opacity = root.show_lyrics ? 1 : 0
+    alert-timer := Timer {
+        interval: 8000ms;
+        running: false;
+        triggered => {
+            self.running = false;
+            advance-alert();
+        }
     }
+
+    pure function get-target-text() -> string {
+        if (root.show_player_info && !current-alert.is-empty) {
+            return current-alert;
+        } else if (root.show_lyrics && !current-lyric.is-empty) {
+            return current-lyric;
+        }
+        return "";
+    }
+
+    function trigger-update() {
+        pending-text = root.get-target-text();
+        pending-is-alert = root.show_player_info && !current-alert.is-empty;
+        if (pending-text != displayed-text || pending-is-alert != displaying-alert) {
+            fading-out = true;
+            swap-timer.running = true;
+        }
+    }
+
+    init => { trigger-update(); }
+
+    changed current-player-info => {
+        if (current-player-info.is-empty) {
+            reset-alerts();
+        } else {
+            enqueue-alert(current-player-info);
+        }
+    }
+
+    function reset-alerts() {
+        current-alert = "";
+        next-alert = "";
+        alert-timer.running = false;
+        trigger-update();
+    }
+    changed current-lyric => { trigger-update(); }
+    changed show_lyrics => { trigger-update(); }
+    changed show_player_info => { trigger-update(); }
 
     swap-timer := Timer {
         interval: 200ms;
         running: false;
         triggered => {
             displayed-text = pending-text;
-            
+            displaying-alert = pending-is-alert;
+            italic = root.show_lyrics && !displaying-alert && !displayed-text.is-empty;
             fading-out = false;
             self.running = false;
         }
     }
 
     height: 40px;
+    opacity: (show_lyrics || show_player_info) ? 1 : 0;
+    animate opacity { duration: 150ms; easing: ease-out; }
 
-    Text {
-        text: displayed-text;
-        font-size: 10px;
-        color: Theme.text-2;
-        horizontal-alignment: center;
-        overflow: elide;
+    Rectangle {
         width: 100%;
-
+        height: 100%;
         opacity: fading-out ? 0 : 1;
         animate opacity { duration: 150ms; easing: ease-out; }
-    }
 
-    animate opacity { duration: 150ms; easing: ease-out; }
+        if !root.displaying-alert : Text {
+            text: displayed-text;
+            font-size: 10px;
+            color: Theme.text-2;
+            horizontal-alignment: center;
+            overflow: elide;
+            width: 100%;
+            font-italic: root.italic;
+        }
+
+        if root.displaying-alert : MarqueeText {
+            text: displayed-text;
+            text-color: Theme.text-2;
+            font-size: 10px;
+            width: 100%;
+            height: parent.height;
+            speed: 30;
+            font-weight: 400;
+            fade-colour: Theme.background;
+        }
+    }
 }
 
 export component StatusBar inherits Rectangle {

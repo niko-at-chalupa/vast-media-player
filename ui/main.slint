@@ -27,6 +27,7 @@ export component MainWindow inherits Window {
     property <bool> should-show-lyrics-in-status-bar: PlayerData.has-lyrics && root.active-screen != State.Player;
     changed should-show-lyrics-in-status-bar => {
         StatusBarData.show-status-bar-lyrics = root.should-show-lyrics-in-status-bar;
+        StatusBarData.show_player_info = root.active-screen == State.Player;
     }
 
     changed active-screen => {
