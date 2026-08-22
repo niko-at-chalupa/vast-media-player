@@ -276,3 +276,21 @@ impl Queue {
         self.tracks.get(id)
     }
 }
+
+impl fmt::Display for Queue {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        writeln!(f, "Queue ({} tracks):", self.track_order.len())?;
+        for (index, track_id) in self.track_order.iter().enumerate() {
+            if let Some(track) = self.tracks.get(track_id) {
+                let full_hash = format!("{:016x}", track_id.0);
+                let truncated_hash = &full_hash[..7.min(full_hash.len())];
+                
+                let is_current = self.current_index == Some(index);
+                let label = if is_current { " [PLAYING]" } else { "" };
+
+                writeln!(f, "  {}. {} ({}){}", index + 1, track.title, truncated_hash, label)?;
+            }
+        }
+        Ok(())
+    }
+}
