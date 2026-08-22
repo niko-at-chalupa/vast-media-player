@@ -82,10 +82,14 @@ fn main() -> anyhow::Result<()> {
         hwnd: None,
     })?;
 
-    let (mpris_tx, mpris_rx): (_, Receiver<()>) = channel();
+    let (mpris_tx, mpris_rx): (_, Receiver<MediaControlEvent>) = channel();
     controls.attach(move |event| match event {
-        MediaControlEvent::Play | MediaControlEvent::Pause | MediaControlEvent::Toggle => {
-            let _ = mpris_tx.send(());
+        e @ (MediaControlEvent::Play 
+        | MediaControlEvent::Pause 
+        | MediaControlEvent::Toggle
+        | MediaControlEvent::Next 
+        | MediaControlEvent::Previous) => {
+            let _ = mpris_tx.send(e); 
         }
         _ => {}
     })?;
@@ -98,7 +102,7 @@ fn main() -> anyhow::Result<()> {
     let timer = slint::Timer::default();
     timer.start(
         slint::TimerMode::Repeated,
-        std::time::Duration::from_millis(200),
+        std::time::Duration::from_millis(100),
         move || {
             let Some(ui) = ui_weak.upgrade() else {
                 return;
@@ -111,6 +115,21 @@ fn main() -> anyhow::Result<()> {
                     None => return,
                 }
             };
+
+            if let Ok(msg) = mpris_rx.try_recv() {
+                match msg {
+                    MediaControlEvent::Play => player.borrow().set_pause(false),
+                    MediaControlEvent::Pause => player.borrow().set_pause(true),
+                    MediaControlEvent::Toggle => player.borrow().toggle_pause(),
+                    MediaControlEvent::Next => { 
+                        let _ = queue_for_timer.borrow_mut().play_next();
+                    },
+                    MediaControlEvent::Previous => { 
+                        let _ = queue_for_timer.borrow_mut().play_previous();
+                    },
+                    _ => ()
+                }
+            }
 
             let (elapsed, is_playing, is_finished, total) = {
                 let p = player.borrow();
@@ -142,10 +161,6 @@ fn main() -> anyhow::Result<()> {
                 }
             }
 
-            if mpris_rx.try_recv().is_ok() {
-                player.borrow().toggle_pause();
-            }
-
             let current_index = queue_for_timer.borrow().current_index();
             if current_index != last_index {
                 last_index = current_index;
@@ -164,6 +179,8 @@ fn main() -> anyhow::Result<()> {
                     lyrics_for_timer = Lyrics::find_and_load_for(&p.info.path);
                     ui.global::<PlayerData>()
                         .set_has_lyrics(lyrics_for_timer.is_some());
+                    ui.global::<PlayerData>()
+                        .set_lyric_line("".into());
                 }
             }
 

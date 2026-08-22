@@ -1,6 +1,7 @@
 use anyhow::Context;
 use audiotags::Tag;
 use rodio::{Decoder, OutputStream, OutputStreamHandle, Sink, Source};
+use core::borrow;
 use std::cell::RefCell;
 use std::collections::HashMap;
 use std::fs::File;
@@ -138,6 +139,10 @@ impl Player {
     pub fn total_duration(&self) -> Option<Duration> {
         self.total_duration
     }
+
+    pub fn stop(&self) {
+        self.sink.stop();
+    }
 }
 
 #[derive(Eq, Hash, PartialEq, Clone)]
@@ -206,12 +211,23 @@ impl Queue {
             .tracks
             .get(&track_id)
             .context("Queue does not contain track")?;
+
+        if let Some(old_player) = self.player.take() {
+            old_player.borrow_mut().stop();
+        }
+
         let player = track.play()?;
 
         self.player = Some(Rc::new(RefCell::new(player)));
         self.current_index = Some(index);
 
         Ok(())
+    }
+
+    pub fn play_at_clamped(&mut self, index: usize) -> anyhow::Result<bool> {
+        let last = self.track_order.len().saturating_sub(1);
+        self.play_at(index.min(last))?;
+        Ok(true)
     }
 
     pub fn play_next(&mut self) -> anyhow::Result<bool> {
