@@ -1,7 +1,6 @@
 use anyhow::Context;
 use audiotags::Tag;
 use rodio::{Decoder, OutputStream, OutputStreamHandle, Sink, Source};
-use core::borrow;
 use std::cell::RefCell;
 use std::collections::HashMap;
 use std::fs::File;

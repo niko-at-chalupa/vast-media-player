@@ -3,6 +3,7 @@ mod player;
 mod status_bar;
 
 use anyhow::Context;
+use audiotags::error;
 use clap::Parser;
 use lyrics::Lyrics;
 use player::Player;
@@ -15,7 +16,7 @@ use std::path::PathBuf;
 use std::rc::Rc;
 use std::sync::mpsc::{channel, Receiver};
 use std::time::Duration;
-
+use tracing::{error};
 use crate::player::{Queue, TrackInfo};
 
 #[derive(Parser, Debug)]
@@ -32,6 +33,8 @@ fn format_time(d: Duration) -> String {
 slint::include_modules!();
 
 fn main() -> anyhow::Result<()> {
+    tracing_subscriber::fmt::init();
+    
     let cli = Cli::parse();
 
     if !cli.audio_file.exists() {
@@ -147,10 +150,10 @@ fn main() -> anyhow::Result<()> {
                     },
                     MediaControlEvent::Previous => {
                         if restart_on_previous {
-                            if player.borrow().seek_to_start().is_err() {
-                                println!("Error seeking to start");
+                            if let Err(e) = player.borrow().seek_to_start() {
                                 ui.global::<PlayerData>().set_extra_info("".into());
                                 ui.global::<PlayerData>().set_extra_info("error seeking to start; went to previous track".into());
+                                error!("{:?}", e);
                                 let _ = queue_for_timer.borrow_mut().play_previous();
                             } else {
                                 ui.global::<PlayerData>().set_extra_info("error seeking to start; went to previous track".into());
