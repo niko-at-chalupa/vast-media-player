@@ -131,7 +131,6 @@ fn main() -> anyhow::Result<()> {
             const RESTART_THRESHOLD: Duration = Duration::from_secs(4);
             if elapsed > RESTART_THRESHOLD {
                 restart_on_previous = true;
-                ui.global::<PlayerData>().set_extra_info("using ⏮ will attempt to restart track".into());
             } else {
                 restart_on_previous = false;
             }
