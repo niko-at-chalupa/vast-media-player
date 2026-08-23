@@ -3,13 +3,10 @@ mod player;
 mod status_bar;
 
 use anyhow::Context;
-use audiotags::error;
 use clap::Parser;
 use lyrics::Lyrics;
 use player::Player;
 use slint::SharedString;
-use slint::platform::Key::T;
-// use slint::platform::Key::P;
 use souvlaki::{MediaControlEvent, MediaControls, PlatformConfig};
 use std::cell::RefCell;
 use std::path::PathBuf;
@@ -61,7 +58,7 @@ fn main() -> anyhow::Result<()> {
             .context("Player should exist after playing track")?
     };
 
-    let mut lyrics: Option<Lyrics> = Lyrics::find_and_load_for(&player.borrow().info.path);
+    let lyrics: Option<Lyrics> = Lyrics::find_and_load_for(&player.borrow().info.path);
 
     let ui = MainWindow::new()?;
     ui.global::<PlayerData>()

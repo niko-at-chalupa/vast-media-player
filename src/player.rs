@@ -175,6 +175,7 @@ impl Default for Queue {
     }
 }
 
+#[allow(dead_code)]
 impl Queue {
     pub fn track_order(&self) -> &Vec<TrackId> {
         &self.track_order

@@ -3,7 +3,7 @@ use battery::units::ratio::percent;
 use chrono::{DateTime, Local};
 use slint::ComponentHandle;
 use slint::SharedString;
-use std::{fmt::format, time::SystemTime};
+use std::time::SystemTime;
 
 fn get_battery() -> Result<Option<battery::Battery>, battery::Error> {
     let manager = battery::Manager::new()?;
