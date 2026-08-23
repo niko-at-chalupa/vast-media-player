@@ -1,11 +1,11 @@
 use anyhow::Context;
 use audiotags::Tag;
-use rodio::{Decoder, OutputStream, OutputStreamHandle, Sink, Source};
+use rodio::stream::{DeviceSinkBuilder, MixerDeviceSink};
+use rodio::{Decoder, Source};
 use std::cell::RefCell;
 use std::collections::HashMap;
 use std::fs::File;
 use std::hash::{Hash, Hasher};
-use std::io::BufReader;
 use std::path::{Path, PathBuf};
 use std::rc::Rc;
 use std::time::Duration;
@@ -82,57 +82,52 @@ impl fmt::Display for TrackInfo {
 }
 
 pub struct Player {
-    _stream: OutputStream,
-    _stream_handle: OutputStreamHandle,
-    sink: Sink,
+    _device_sink: MixerDeviceSink,
+    player: rodio::Player,
     total_duration: Option<Duration>,
     pub info: TrackInfo,
 }
 
 impl Player {
     pub fn play_file(path: &Path) -> anyhow::Result<Player> {
-        let (stream, stream_handle) = OutputStream::try_default()?;
-        let sink = Sink::try_new(&stream_handle)?;
+        let mut device_sink = DeviceSinkBuilder::open_default_sink()?;
+        device_sink.log_on_drop(false);
+        let player = rodio::Player::connect_new(&device_sink.mixer());
 
-        let file = BufReader::new(File::open(path)?);
-        let source = Decoder::new(file)?;
+        let file = File::open(path)?;
+        let source = Decoder::try_from(file)?;   // sets byte_len from metadata
         let total_duration = source.total_duration();
-        sink.append(source);
+        player.append(source);
 
         Ok(Player {
-            _stream: stream,
-            _stream_handle: stream_handle,
-            sink,
+            _device_sink: device_sink,
+            player,
             total_duration,
             info: TrackInfo::from_path(path),
         })
     }
 
     pub fn toggle_pause(&self) {
-        if self.sink.is_paused() {
-            self.sink.play();
-        } else {
-            self.sink.pause();
-        }
+        if self.player.is_paused() { self.player.play(); } else { self.player.pause(); }
     }
     
     pub fn set_pause(&self, is_paused: bool) {
         match is_paused {
-            true => self.sink.pause(),
-            false => self.sink.play(),
+            true => self.player.pause(),
+            false => self.player.play(),
         }
     }
 
     pub fn is_playing(&self) -> bool {
-        !self.sink.is_paused() && !self.sink.empty()
+        !self.player.is_paused() && !self.player.empty()
     }
 
     pub fn is_finished(&self) -> bool {
-        self.sink.empty()
+        self.player.empty()
     }
 
     pub fn elapsed(&self) -> Duration {
-        self.sink.get_pos()
+        self.player.get_pos()
     }
 
     pub fn total_duration(&self) -> Option<Duration> {
@@ -140,13 +135,11 @@ impl Player {
     }
 
     pub fn stop(&self) {
-        self.sink.stop();
+        self.player.stop();
     }
 
     pub fn seek_to(&self, position: Duration) -> anyhow::Result<()> {
-        self.sink
-            .try_seek(position)
-            .map_err(|e| anyhow::anyhow!("seek failed: {e}"))
+        self.player.try_seek(position).map_err(|e| anyhow::anyhow!("seek failed: {e}"))
     }
 
     pub fn seek_to_start(&self) -> anyhow::Result<()> {

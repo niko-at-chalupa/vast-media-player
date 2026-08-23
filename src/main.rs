@@ -146,7 +146,8 @@ fn main() -> anyhow::Result<()> {
                     },
                     MediaControlEvent::Previous => {
                         if restart_on_previous {
-                            if let Err(e) = player.borrow().seek_to_start() {
+                            let seek_result = player.borrow().seek_to_start(); // Ref dropped here, right after the call
+                            if let Err(e) = seek_result {
                                 ui.global::<PlayerData>().set_extra_info("".into());
                                 ui.global::<PlayerData>().set_extra_info("error seeking to start; went to previous track".into());
                                 error!("{:?}", e);
