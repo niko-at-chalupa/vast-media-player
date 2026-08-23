@@ -153,7 +153,6 @@ fn main() -> anyhow::Result<()> {
                                 error!("{:?}", e);
                                 let _ = queue_for_timer.borrow_mut().play_previous();
                             } else {
-                                ui.global::<PlayerData>().set_extra_info("error seeking to start; went to previous track".into());
                                 ui.global::<PlayerData>().set_extra_info("seeked to start; press ⏮ to go to previous track".into());
                             }
                         } else {
