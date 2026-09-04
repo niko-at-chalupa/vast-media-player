@@ -1,6 +1,6 @@
 import "./fonts/roboto_mono/RobotoMono-VariableFont_wght.ttf";
 import { Theme } from "./colours.slint";
-import { Window } from "./window.slint";
+import { WindowTile, WindowColors } from "./window.slint";
 import { AppState, State } from "./state.slint";
 
 export global SidebarEntryColors {
@@ -47,11 +47,9 @@ export component SidebarEntry inherits Rectangle {
     }
 }
 
-export component Home inherits Rectangle {
-    width: 320px;
-    height: 240px;
-    background: Theme.background;
-
+export component Menu inherits Rectangle {
+    width: 140px;
+    in-out property <bool> window-active: false;
     property <int> focused-index: 0;
 
     property <[string]> entries: ["Player", "Test"];
@@ -72,13 +70,12 @@ export component Home inherits Rectangle {
         root.entry-activated(focused-index);
     }
 
-    Rectangle {
-    }
-
     HorizontalLayout {
         padding: 5px;
         spacing: 5px;
-        Window {
+        // mimics WindowTile; "neccessary" (maybe? maybe not?) because the delay
+        // in animation doesn't work (and probably the modified duration)
+        Rectangle {
             VerticalLayout {
                 padding: 5px;
                 alignment: start;
@@ -89,14 +86,23 @@ export component Home inherits Rectangle {
                     activated => { root.entry-activated(idx); }
                 }
             }
-        }
-
-        Rectangle {
-            VerticalLayout {
-                Text {
-
-                }
+            animate border-color { 
+                delay: root.window-active ? 65ms : 0ms;
+                duration: 750ms; 
+                easing: cubic-bezier(0.23, 1.0, 0.32, 1.0); 
             }
+    
+            background: WindowColors.window-bg;
+            border-width: 2px;
+            border-radius: WindowColors.hypr-rounding;
+            
+            animate opacity {
+                duration: 400ms;
+                easing: ease-out;
+            }
+
+            opacity: root.window-active ? 1 : 0.6;
+            border-color: root.window-active ? WindowColors.active-border : WindowColors.inactive-border;
         }
     }
 }

@@ -1,8 +1,8 @@
 export enum State {
     Player,
-    Home,
 }
 
 export global AppState {
-    in-out property <State> state: Home;
+    in-out property <State> state: Player;
+    in-out property <bool> in-menu: false;
 }

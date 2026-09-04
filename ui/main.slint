@@ -5,7 +5,7 @@ import "./fonts/roboto_mono/RobotoMono-Italic-VariableFont_wght.ttf";
 import "./fonts/roboto_mono/RobotoMono-VariableFont_wght.ttf";
 import { Player } from "./player.slint";
 import { StatusBar } from "./status_bar.slint";
-import { Home } from "./home.slint";
+import { Menu } from "./menu.slint";
 import { PlayerData } from "./player.slint";
 export { PlayerData }
 import { StatusBarData } from "./status_bar.slint";
@@ -19,8 +19,9 @@ export component MainWindow inherits Window {
     default-font-family: "Roboto Mono";
     background: Theme.background;
 
-    property <State> displayed-screen: State.Home;
+    property <State> displayed-screen: State.Player;
     in-out property <State> active-screen: AppState.state;
+    in-out property <bool> in-menu: AppState.in-menu;
 
     property <bool> fading: false;
 
@@ -40,32 +41,11 @@ export component MainWindow inherits Window {
 
     main-focus-scope := FocusScope {
         key-pressed(event) => {
-            if (root.active-screen == State.Home) {
-                if (event.text == Key.S || event.text == Key.DownArrow || event.text == "s") {
-                    home-layer.navigate-down();
-                    return accept;
-                }
-                if (event.text == Key.W || event.text == Key.UpArrow || event.text == "w") {
-                    home-layer.navigate-up();
-                    return accept;
-                }
-                if (event.text == Key.F || event.text == " " || event.text == Key.Return || event.text == "f") {
-                    home-layer.activate-selected();
-                    return accept;
-                }
+            if event.text == Key.Escape {
+                AppState.in-menu = !AppState.in-menu;
+                return accept;
             } else if (root.active-screen == State.Player) {
-                if (event.text == Key.Escape) {
-                    AppState.state = State.Home;
-                    return accept;
-                }
-            }
 
-            if (root.active-screen == State.Player) {
-                if event.text == Key.Escape {
-                    // Looks weird, but it's better inline...
-                    AppState.state = State.Home;
-                    return accept;
-                }
             }
 
             return reject;
@@ -95,19 +75,24 @@ export component MainWindow inherits Window {
                     easing: ease-in-out;
                 }
             }
-
-            home-layer := Home {
-                width: root.width;
-                height: parent.height;
-                opacity: root.fading ? 0.0 : 1.0;
-                visible: root.displayed-screen == State.Home;
-
-                animate opacity {
-                    duration: 150ms;
-                    easing: ease-in-out;
-                }
-            }
         }
+    }
+
+    Rectangle {
+        background: black;
+        opacity: root.in-menu ? 0.5 : 0;
+        animate opacity {
+            duration: root.in-menu ? 400ms : 150ms;
+            easing: root.in-menu ? ease-out-quint : linear;
+        }
+    }
+    Menu {
+        x: root.in-menu ? (root.width - self.width) : root.width;
+        animate x {
+            duration: root.in-menu ? 400ms : 150ms;
+            easing: root.in-menu ? ease-out-quint : linear;
+        }
+        window-active: root.in-menu;
     }
 
     swap-timer := Timer {

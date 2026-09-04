@@ -12,8 +12,8 @@ export global WindowColors {
     in-out property <color> window-accent: #ae84cf;
 }
 
-export component Window inherits Rectangle {
-    in property <bool> active: false;
+export component WindowTile inherits Rectangle {
+    in-out property <bool> active: false;
     
     background: WindowColors.window-bg;
     border-width: 2px;
@@ -29,10 +29,5 @@ export component Window inherits Rectangle {
         easing: ease-out;
     }
 
-    // Are we going to keep this?
-    border-color: ta.has-hover || active ? WindowColors.active-border : WindowColors.inactive-border;
-    ta := TouchArea {
-        width: 100%;
-        height: 100%;
-    }
+    border-color: active ? WindowColors.active-border : WindowColors.inactive-border;
 }
