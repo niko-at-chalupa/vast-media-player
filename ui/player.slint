@@ -5,6 +5,7 @@ import "./fonts/roboto_mono/RobotoMono-Italic-VariableFont_wght.ttf";
 import "./fonts/roboto_mono/RobotoMono-VariableFont_wght.ttf";
 import { HorizontalBox, VerticalBox } from "std-widgets.slint";
 import { MarqueeText } from "./marquee.slint";
+import { FourSquareMetronome } from "./metronome.slint";
 
 export global PlayerData {
     in-out property <string> track-title: "No Track Loaded";
@@ -129,10 +130,6 @@ export component Player inherits Rectangle {
 
             Rectangle {}
         }
-
-        LyricCrossfade {
-            height: 40px;
-        }
     }
 
     // Progress
@@ -140,15 +137,38 @@ export component Player inherits Rectangle {
         Rectangle {}
 
         HorizontalLayout {
+            padding-left: 14px;
+            padding-right: 14px;
+
+            LyricCrossfade {
+                height: 40px;
+            }
+        }
+        
+        HorizontalLayout {
             padding-left: 4px;
             padding-right: 4px;
+            spacing: 4px;
+
             Text {
                 text: PlayerData.time-label;
                 font-size: 10px;
                 color: Theme.text-2;
-                horizontal-alignment: left;
                 height: 16px;
+                vertical-alignment: center;
             }
+
+            VerticalLayout {
+                Rectangle {}
+                FourSquareMetronome {
+                    running: true;
+                    bpm-interval: 341ms;
+                    height: 9px;
+                }
+                Rectangle {}
+            }
+            
+            Rectangle {}
 
             Image {
                 source: PlayerData.is-playing ? @image-url("assets/pause.svg") : @image-url("assets/play.svg");
