@@ -7,14 +7,10 @@ pub fn apply_tempo_to_ui(ui: &crate::MainWindow, tempo: Option<u32>) {
             let beat_duration = Duration::from_secs_f64(60.0 / bpm as f64);
             ui.global::<crate::PlayerData>().set_has_tempo(true);
             ui.global::<crate::PlayerData>().set_tempo(bpm as i32);
-            ui.global::<crate::PlayerData>()
-                .set_duration_between_beats(beat_duration.as_millis() as i64);
         }
         _ => {
             ui.global::<crate::PlayerData>().set_has_tempo(false);
             ui.global::<crate::PlayerData>().set_tempo(0);
-            ui.global::<crate::PlayerData>()
-                .set_duration_between_beats(0);
         }
     }
 }

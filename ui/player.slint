@@ -5,7 +5,7 @@ import "./fonts/roboto_mono/RobotoMono-Italic-VariableFont_wght.ttf";
 import "./fonts/roboto_mono/RobotoMono-VariableFont_wght.ttf";
 import { HorizontalBox, VerticalBox } from "std-widgets.slint";
 import { MarqueeText } from "./marquee.slint";
-import { FourSquareMetronome } from "./metronome.slint";
+import { SquareMetronome } from "./metronome.slint";
 
 export global PlayerData {
     in-out property <string> track-title: "No Track Loaded";
@@ -18,8 +18,8 @@ export global PlayerData {
     in-out property <string> extra-info: "";
     in-out property <bool> has-tempo: false;
     in-out property <int> tempo;
-    in-out property <duration> duration-between-beats;
     in-out property <int> beat-index: -1;
+    in-out property <int> beats-per-measure: 4;
 }
 
 export component LyricCrossfade {
@@ -164,9 +164,9 @@ export component Player inherits Rectangle {
 
             VerticalLayout {
                 Rectangle {}
-                FourSquareMetronome {
-                    running: PlayerData.has-tempo && PlayerData.is-playing;
-                    beat-index: PlayerData.beat-index;
+                SquareMetronome {
+                    beats-per-measure: PlayerData.beats-per-measure;
+                    current-beat: PlayerData.beat-index;
                     height: 9px;
                 }
                 Rectangle {}

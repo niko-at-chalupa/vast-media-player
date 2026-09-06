@@ -1,6 +1,6 @@
 import { Theme } from "./colours.slint";
 
-component SquareImpulsinator inherits Rectangle {
+component ReactiveSquareImpulsinator inherits Rectangle {
     rect-for-background := Rectangle {
         width: 100%;
         height: 100%;
@@ -32,8 +32,13 @@ component SquareImpulsinator inherits Rectangle {
         ]
     }
 
-    public function pulse() {
-        rect-for-background.pulse-state = true;
+    in property <int> current-beat;
+    in property <int> when-do-i-go;
+
+    changed current-beat => {
+        if current-beat == when-do-i-go {
+            rect-for-background.pulse-state = true;
+        }
     }
 
     Path {
@@ -47,63 +52,18 @@ component SquareImpulsinator inherits Rectangle {
     }
 }
 
-export component FourSquareMetronome inherits Rectangle {
-    background: Theme.background;
-    
-    // Metronome State
+export component SquareMetronome {    
     in-out property <int> current-beat: 0;
-    
-    // The beat index is calculated from the player's actual playback position.
-    in property <bool> running: false;
-    in property <int> beat-index: -1;
-
-    changed beat-index => {
-        if (root.running && beat-index >= 0) {
-            root.pulse-beat(beat-index);
-        }
-    }
-
-    changed running => {
-        if (root.running && root.beat-index >= 0) {
-            root.pulse-beat(root.beat-index);
-        }
-    }
-
-    function pulse-beat(beat: int) {
-        root.current-beat = beat;
-        if (beat == 0) {
-            one.pulse();
-        } else if (beat == 1) {
-            two.pulse();
-        } else if (beat == 2) {
-            three.pulse();
-        } else if (beat == 3) {
-            four.pulse();
-        }
-    }
-
-    public function reset() {
-        root.current-beat = 0;
-    }
+    in-out property <int> beats-per-measure: 4;
 
     HorizontalLayout {
         spacing: 1px;
 
-        one := SquareImpulsinator {
+        for n in root.beats-per-measure : ReactiveSquareImpulsinator {
             width: self.height;
             height: root.height;
-        }
-        two := SquareImpulsinator {
-            width: self.height;
-            height: root.height;
-        }
-        three := SquareImpulsinator {
-            width: self.height;
-            height: root.height;
-        }
-        four := SquareImpulsinator {
-            width: self.height;
-            height: root.height;
+            current-beat: root.current-beat;
+            when-do-i-go: n;
         }
     }
 }

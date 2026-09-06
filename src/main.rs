@@ -166,6 +166,12 @@ fn main() -> anyhow::Result<()> {
 
             let is_playing = player.borrow().is_playing();
             ui.global::<PlayerData>().set_is_playing(is_playing);
+
+            ui.global::<PlayerData>().set_beat_index(metronome::beat_index(
+                elapsed,
+                player.borrow().info.tempo,
+                4
+            ));
             ui.global::<PlayerData>().set_beat_index(metronome::beat_index(
                 elapsed,
                 player.borrow().info.tempo,
