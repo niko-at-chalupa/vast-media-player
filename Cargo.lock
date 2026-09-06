@@ -5922,6 +5922,7 @@ dependencies = [
  "clap",
  "fxhash",
  "rodio",
+ "serde_json",
  "slint",
  "slint-build",
  "souvlaki",

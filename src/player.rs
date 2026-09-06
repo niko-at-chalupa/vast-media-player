@@ -2,11 +2,13 @@ use anyhow::Context;
 use audiotags::Tag;
 use rodio::stream::{DeviceSinkBuilder, MixerDeviceSink};
 use rodio::{Decoder, Source};
+use serde_json::Value;
 use std::cell::RefCell;
 use std::collections::HashMap;
 use std::fs::File;
 use std::hash::{Hash, Hasher};
 use std::path::{Path, PathBuf};
+use std::process::Command;
 use std::rc::Rc;
 use std::time::Duration;
 use std::fmt;
@@ -16,9 +18,66 @@ pub struct TrackInfo {
     pub title: String,
     pub artists: Vec<String>,
     pub path: PathBuf,
+    pub tempo: Option<u32>,
 }
 
 impl TrackInfo {
+    fn tempo_from_ffprobe_json(output: &str) -> Option<u32> {
+        let value: Value = serde_json::from_str(output).ok()?;
+
+        fn find_tempo(value: &Value) -> Option<u32> {
+            match value {
+                Value::Object(map) => {
+                    for (key, item) in map {
+                        let normalized = key.to_ascii_lowercase();
+                        if matches!(normalized.as_str(), "tempo" | "tbpm" | "bpm" | "beats_per_minute") {
+                            if let Some(tempo) = item.as_str().and_then(|s| s.parse::<f64>().ok()) {
+                                return Some(tempo.round() as u32);
+                            }
+                            if let Some(tempo) = item.as_i64() {
+                                return Some(tempo as u32);
+                            }
+                            if let Some(tempo) = item.as_f64() {
+                                return Some(tempo.round() as u32);
+                            }
+                        }
+                    }
+
+                    for item in map.values() {
+                        if let Some(tempo) = find_tempo(item) {
+                            return Some(tempo);
+                        }
+                    }
+                }
+                Value::Array(items) => {
+                    for item in items {
+                        if let Some(tempo) = find_tempo(item) {
+                            return Some(tempo);
+                        }
+                    }
+                }
+                _ => {}
+            }
+
+            None
+        }
+
+        find_tempo(&value)
+    }
+
+    fn tempo_for_path(path: &Path) -> Option<u32> {
+        let output = Command::new("ffprobe")
+            .args(["-v", "error", "-show_entries", "format_tags:stream_tags", "-of", "json", path.to_string_lossy().as_ref()])
+            .output()
+            .ok()?;
+
+        if !output.status.success() {
+            return None;
+        }
+
+        Self::tempo_from_ffprobe_json(&String::from_utf8_lossy(&output.stdout))
+    }
+
     pub fn from_path(path: &Path) -> Self {
         let filename_title = match path.file_stem() {
             Some(s) => s.to_string_lossy().to_string(),
@@ -43,10 +102,13 @@ impl TrackInfo {
             Err(_) => (filename_title, vec![]),
         };
 
+        let tempo = Self::tempo_for_path(path);
+
         TrackInfo {
             title,
             artists,
             path: path.to_path_buf(),
+            tempo,
         }
     }
 

@@ -26,7 +26,7 @@ component SquareImpulsinator inherits Rectangle {
             transparent when !pulse-state: {
                 opacity: 0;
                 in {
-                    animate opacity { duration: 800ms; easing: ease-out; }
+                    animate opacity { duration: 1000ms; easing: ease-out; }
                 }
             }
         ]
@@ -53,32 +53,32 @@ export component FourSquareMetronome inherits Rectangle {
     // Metronome State
     in-out property <int> current-beat: 0;
     
-    // Automatic playback controls
+    // The beat index is calculated from the player's actual playback position.
     in property <bool> running: false;
-    in property <duration> bpm-interval: 500ms; // 120 BPM default
+    in property <int> beat-index: -1;
 
-    Timer {
-        interval: root.bpm-interval;
-        running: root.running;
-        triggered => {
-            root.tick();
+    changed beat-index => {
+        if (root.running && beat-index >= 0) {
+            root.pulse-beat(beat-index);
         }
     }
 
-    public function tick() {
-        if (root.current-beat == 0) {
-            one.pulse();
-        } else if (root.current-beat == 1) {
-            two.pulse();
-        } else if (root.current-beat == 2) {
-            three.pulse();
-        } else if (root.current-beat == 3) {
-            four.pulse();
+    changed running => {
+        if (root.running && root.beat-index >= 0) {
+            root.pulse-beat(root.beat-index);
         }
-        
-        root.current-beat += 1;
-        if (root.current-beat >= 4) {
-            root.current-beat = 0;
+    }
+
+    function pulse-beat(beat: int) {
+        root.current-beat = beat;
+        if (beat == 0) {
+            one.pulse();
+        } else if (beat == 1) {
+            two.pulse();
+        } else if (beat == 2) {
+            three.pulse();
+        } else if (beat == 3) {
+            four.pulse();
         }
     }
 

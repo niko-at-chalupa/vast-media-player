@@ -16,6 +16,10 @@ export global PlayerData {
     in-out property <string> time-label: "--:-- / --:--";
     in-out property <bool> is-playing: false;
     in-out property <string> extra-info: "";
+    in-out property <bool> has-tempo: false;
+    in-out property <int> tempo;
+    in-out property <duration> duration-between-beats;
+    in-out property <int> beat-index: -1;
 }
 
 export component LyricCrossfade {
@@ -161,8 +165,8 @@ export component Player inherits Rectangle {
             VerticalLayout {
                 Rectangle {}
                 FourSquareMetronome {
-                    running: true;
-                    bpm-interval: 341ms;
+                    running: PlayerData.has-tempo && PlayerData.is-playing;
+                    beat-index: PlayerData.beat-index;
                     height: 9px;
                 }
                 Rectangle {}

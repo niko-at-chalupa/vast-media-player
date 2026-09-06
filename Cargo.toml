@@ -13,6 +13,7 @@ battery = "0.7.8"
 chrono = "0.4.45"
 fxhash = "0.2.1"
 souvlaki = "0.8.3"
+serde_json = "1.0"
 tracing = "0.1.44"
 tracing-subscriber = "0.3.23"
 

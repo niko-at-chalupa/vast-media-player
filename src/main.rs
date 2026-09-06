@@ -27,6 +27,31 @@ fn format_time(d: Duration) -> String {
     format!("{}:{:02}", total_secs / 60, total_secs % 60)
 }
 
+fn apply_tempo_to_ui(ui: &MainWindow, tempo: Option<u32>) {
+    match tempo {
+        Some(bpm) if bpm > 0 => {
+            let beat_duration = Duration::from_secs_f64(60.0 / bpm as f64);
+            ui.global::<PlayerData>().set_has_tempo(true);
+            ui.global::<PlayerData>().set_tempo(bpm as i32);
+            ui.global::<PlayerData>().set_duration_between_beats(beat_duration.as_millis() as i64);
+        }
+        _ => {
+            ui.global::<PlayerData>().set_has_tempo(false);
+            ui.global::<PlayerData>().set_tempo(0);
+            ui.global::<PlayerData>().set_duration_between_beats(0);
+        }
+    }
+}
+
+fn beat_index(elapsed: Duration, tempo: Option<u32>) -> i32 {
+    let Some(bpm) = tempo.filter(|bpm| *bpm > 0) else {
+        return -1;
+    };
+
+    // Convert elapsed playback time into the current beat of a four-beat bar.
+    ((elapsed.as_nanos() * bpm as u128 / 60_000_000_000) % 4) as i32
+}
+
 slint::include_modules!();
 
 fn main() -> anyhow::Result<()> {
@@ -76,6 +101,7 @@ fn main() -> anyhow::Result<()> {
     }
 
     ui.global::<PlayerData>().set_has_lyrics(lyrics.is_some());
+    apply_tempo_to_ui(&ui, player.borrow().info.tempo);
 
     let mut controls = MediaControls::new(PlatformConfig {
         dbus_name: "vast-media-player",
@@ -103,7 +129,7 @@ fn main() -> anyhow::Result<()> {
     let timer = slint::Timer::default();
     timer.start(
         slint::TimerMode::Repeated,
-        std::time::Duration::from_millis(100),
+        std::time::Duration::from_millis(16),
         move || {
             let Some(ui) = ui_weak.upgrade() else {
                 return;
@@ -117,11 +143,10 @@ fn main() -> anyhow::Result<()> {
                 }
             };
 
-            let (elapsed, is_playing, is_finished, total) = {
+            let (elapsed, is_finished, total) = {
                 let p = player.borrow();
                 (
                     p.elapsed(),
-                    p.is_playing(),
                     p.is_finished(),
                     p.total_duration(),
                 )
@@ -163,7 +188,12 @@ fn main() -> anyhow::Result<()> {
                 }
             }
 
+            let is_playing = player.borrow().is_playing();
             ui.global::<PlayerData>().set_is_playing(is_playing);
+            ui.global::<PlayerData>().set_beat_index(beat_index(
+                elapsed,
+                player.borrow().info.tempo,
+            ));
 
             if let Some(total) = total {
                 let frac = (elapsed.as_secs_f32() / total.as_secs_f32()).min(1.0);
@@ -201,6 +231,8 @@ fn main() -> anyhow::Result<()> {
                     lyrics_for_timer = Lyrics::find_and_load_for(&p.info.path);
                     ui.global::<PlayerData>()
                         .set_has_lyrics(lyrics_for_timer.is_some());
+                    ui.global::<PlayerData>().set_beat_index(-1);
+                    apply_tempo_to_ui(&ui, p.info.tempo);
                     ui.global::<PlayerData>()
                         .set_lyric_line("".into());
                 }
