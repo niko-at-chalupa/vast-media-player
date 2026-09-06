@@ -1,4 +1,5 @@
 mod lyrics;
+mod metronome;
 mod player;
 mod status_bar;
 
@@ -25,33 +26,6 @@ struct Cli {
 fn format_time(d: Duration) -> String {
     let total_secs = d.as_secs();
     format!("{}:{:02}", total_secs / 60, total_secs % 60)
-}
-
-fn apply_tempo_to_ui(ui: &MainWindow, tempo: Option<u32>) {
-    match tempo {
-        Some(bpm) if bpm > 0 => {
-            let beat_duration = Duration::from_secs_f64(60.0 / bpm as f64);
-            ui.global::<PlayerData>().set_has_tempo(true);
-            ui.global::<PlayerData>().set_tempo(bpm as i32);
-            ui.global::<PlayerData>().set_duration_between_beats(beat_duration.as_millis() as i64);
-        }
-        _ => {
-            ui.global::<PlayerData>().set_has_tempo(false);
-            ui.global::<PlayerData>().set_tempo(0);
-            ui.global::<PlayerData>().set_duration_between_beats(0);
-        }
-    }
-}
-
-fn beat_index(elapsed: Duration, tempo: Option<u32>, beats_per_measure: u8) -> i32 {
-    let Some(bpm) = tempo.filter(|bpm| *bpm > 0) else {
-        return -1;
-    };
-
-    // Convert elapsed playback time into the current beat of a four-beat bar.
-    // Is it inefficient to store it as a u8 at first and then convert? No idea,
-    // won't check.
-    ((elapsed.as_nanos() * bpm as u128 / 60_000_000_000) % beats_per_measure as u128) as i32
 }
 
 slint::include_modules!();
@@ -103,7 +77,7 @@ fn main() -> anyhow::Result<()> {
     }
 
     ui.global::<PlayerData>().set_has_lyrics(lyrics.is_some());
-    apply_tempo_to_ui(&ui, player.borrow().info.tempo);
+    metronome::apply_tempo_to_ui(&ui, player.borrow().info.tempo);
 
     let mut controls = MediaControls::new(PlatformConfig {
         dbus_name: "vast-media-player",
@@ -192,7 +166,7 @@ fn main() -> anyhow::Result<()> {
 
             let is_playing = player.borrow().is_playing();
             ui.global::<PlayerData>().set_is_playing(is_playing);
-            ui.global::<PlayerData>().set_beat_index(beat_index(
+            ui.global::<PlayerData>().set_beat_index(metronome::beat_index(
                 elapsed,
                 player.borrow().info.tempo,
                 4
@@ -235,7 +209,7 @@ fn main() -> anyhow::Result<()> {
                     ui.global::<PlayerData>()
                         .set_has_lyrics(lyrics_for_timer.is_some());
                     ui.global::<PlayerData>().set_beat_index(-1);
-                    apply_tempo_to_ui(&ui, p.info.tempo);
+                    metronome::apply_tempo_to_ui(&ui, p.info.tempo);
                     ui.global::<PlayerData>()
                         .set_lyric_line("".into());
                 }
