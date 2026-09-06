@@ -172,11 +172,6 @@ fn main() -> anyhow::Result<()> {
                 player.borrow().info.tempo,
                 4
             ));
-            ui.global::<PlayerData>().set_beat_index(metronome::beat_index(
-                elapsed,
-                player.borrow().info.tempo,
-                4
-            ));
 
             if let Some(total) = total {
                 let frac = (elapsed.as_secs_f32() / total.as_secs_f32()).min(1.0);
