@@ -43,13 +43,15 @@ fn apply_tempo_to_ui(ui: &MainWindow, tempo: Option<u32>) {
     }
 }
 
-fn beat_index(elapsed: Duration, tempo: Option<u32>) -> i32 {
+fn beat_index(elapsed: Duration, tempo: Option<u32>, beats_per_measure: u8) -> i32 {
     let Some(bpm) = tempo.filter(|bpm| *bpm > 0) else {
         return -1;
     };
 
     // Convert elapsed playback time into the current beat of a four-beat bar.
-    ((elapsed.as_nanos() * bpm as u128 / 60_000_000_000) % 4) as i32
+    // Is it inefficient to store it as a u8 at first and then convert? No idea,
+    // won't check.
+    ((elapsed.as_nanos() * bpm as u128 / 60_000_000_000) % beats_per_measure as u128) as i32
 }
 
 slint::include_modules!();
@@ -193,6 +195,7 @@ fn main() -> anyhow::Result<()> {
             ui.global::<PlayerData>().set_beat_index(beat_index(
                 elapsed,
                 player.borrow().info.tempo,
+                4
             ));
 
             if let Some(total) = total {

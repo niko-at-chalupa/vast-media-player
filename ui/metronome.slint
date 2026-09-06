@@ -107,3 +107,53 @@ export component FourSquareMetronome inherits Rectangle {
         }
     }
 }
+
+// this'll be horrible to maintain
+export component TwoSquareMetronome inherits Rectangle {
+    background: Theme.background;
+    
+    // Metronome State
+    in-out property <int> current-beat: 0;
+    
+    // The beat index is calculated from the player's actual playback position.
+    in property <bool> running: false;
+    in property <int> beat-index: -1;
+
+    changed beat-index => {
+        if (root.running && beat-index >= 0) {
+            root.pulse-beat(beat-index);
+        }
+    }
+
+    changed running => {
+        if (root.running && root.beat-index >= 0) {
+            root.pulse-beat(root.beat-index);
+        }
+    }
+
+    function pulse-beat(beat: int) {
+        root.current-beat = beat;
+        if (beat == 0) {
+            one.pulse();
+        } else if (beat == 1) {
+            two.pulse();
+        }
+    }
+
+    public function reset() {
+        root.current-beat = 0;
+    }
+
+    HorizontalLayout {
+        spacing: 1px;
+
+        one := SquareImpulsinator {
+            width: self.height;
+            height: root.height;
+        }
+        two := SquareImpulsinator {
+            width: self.height;
+            height: root.height;
+        }
+    }
+}
