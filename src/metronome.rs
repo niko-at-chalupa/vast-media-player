@@ -1,3 +1,4 @@
+use slint::ComponentHandle;
 use std::time::Duration;
 
 pub fn apply_tempo_to_ui(ui: &crate::MainWindow, tempo: Option<u32>) {
