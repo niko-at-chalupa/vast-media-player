@@ -1,0 +1,8 @@
+[package]
+name = "vast-core"
+version = "0.1.0"
+edition = "2024"
+
+[lib]
+name = "vast_core"
+path = "src/lib.rs"
